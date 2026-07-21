@@ -141,3 +141,4 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+.env .env.local .env.development .env.production .env.test *.env supabase/.env .DS_Store node_modules/ .vercel .railway
