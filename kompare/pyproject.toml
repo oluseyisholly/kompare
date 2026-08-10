@@ -1,0 +1,33 @@
+[project]
+name = "fast-api-template-file-type"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.13.3,<1.14.0",
+    "fastapi[standard]>=0.114.0,<0.115",
+    "psycopg2-binary>=2.9.9,<3.0.0",
+    "python-dotenv>=1.0.1,<2.0.0",
+    "sqlalchemy>=2.0.13,<2.1.0",
+    "uvicorn[standard]>=0.30.6,<0.31",
+    "watchfiles>=0.21.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5,<9.0.0",
+    "ruff>=0.7.0,<1.0.0",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"migrations/env.py" = ["E402"]
+"**/migrations/env.py" = ["E402"]
