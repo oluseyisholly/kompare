@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    container_name: app
+    build:
+      context: .
+    command: >
+      bash -c "
+      echo 'Waiting for Postgres...' &&
+      until pg_isready -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER}; do sleep 1; done &&
+      echo 'Database is ready!' &&
+      alembic upgrade head &&
+      WATCHFILES_FORCE_POLLING=true uvicorn main:app --host 0.0.0.0 --port 8000 --reload --reload-delay 1
+      "
+    volumes:
+      - ./app:/app:cached
+      - ./pyproject.toml:/app/pyproject.toml:ro
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    working_dir: /app
+    environment:
+      - WATCHFILES_FORCE_POLLING=true
+
+volumes:
+  postgres_data:
