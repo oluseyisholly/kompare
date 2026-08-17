@@ -1,14 +1,9 @@
-from fastapi import Depends
+from sqlalchemy.orm import Session
 
-from app.core.database import get_db
-from app.repositories.item import ItemRepository, get_item_repository
-from app.services.base import BaseService
+from models.item import Item
+from services.base import BaseService
 
 
 class ItemService(BaseService):
-    def __init__(self, repository: ItemRepository) -> None:
-        super().__init__(repository=repository)
-
-
-def get_item_service(repository: ItemRepository = Depends(get_item_repository)) -> ItemService:
-    return ItemService(repository=repository)
+    def __init__(self, db: Session):
+        super().__init__(db=db, model=Item)

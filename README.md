@@ -1,4 +1,4 @@
-# FastAPI Template Starter
+# Kompare
 
 A production-ready FastAPI starter template with PostgreSQL, Docker integration, and modern Python tooling.
 

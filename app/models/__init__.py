@@ -1,3 +1,3 @@
-from app.core.database import Base
+from core.database import Base
 
 from .item import Item

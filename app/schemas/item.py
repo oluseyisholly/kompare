@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ItemBase(BaseModel):
@@ -15,12 +15,4 @@ class ItemCreate(ItemBase):
 class ItemRead(ItemBase):
     id: int
 
-    class Config:
-        orm_mode = True
-
-
-class ItemPage(BaseModel):
-    total: int
-    skip: int
-    limit: int
-    items: list[ItemRead]
+    model_config = ConfigDict(from_attributes=True)

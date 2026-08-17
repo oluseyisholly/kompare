@@ -1,14 +1,13 @@
 import os
 import sys
 from logging.config import fileConfig
-from urllib.parse import quote_plus
 
 from alembic import context
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, pool
 
 # Load environment variables from .env
-load_dotenv(override=True)
+load_dotenv()
 
 # Add app directory to Python path (so Alembic can import models)
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -32,11 +31,8 @@ DB_HOST = os.getenv("POSTGRES_HOST", "localhost")
 DB_PORT = os.getenv("POSTGRES_PORT", "5432")
 DB_NAME = os.getenv("POSTGRES_DB", "mydatabase")
 
-DB_USER_QUOTED = quote_plus(DB_USER)
-DB_PASSWORD_QUOTED = quote_plus(DB_PASSWORD)
-
 SQLALCHEMY_DATABASE_URL = (
-    f"postgresql+psycopg2://{DB_USER_QUOTED}:{DB_PASSWORD_QUOTED}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
 
 def run_migrations_offline() -> None:

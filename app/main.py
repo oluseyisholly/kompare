@@ -1,13 +1,13 @@
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
-from app.core.database import Base, engine
-from app.core.logger import logger
-from app.routers import item_router
+from core.database import Base, engine
+from core.logger import logger
+from routers import item_router
 
 # Initialize FastAPI application with metadata
 app = FastAPI(
-    title="FastAPI Template Starter",
+    title="Kompare",
     version="1.0",
     description="A project starter for FastAPI",
     docs_url="/",
