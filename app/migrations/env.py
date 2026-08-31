@@ -1,4 +1,3 @@
-import os
 import sys
 from logging.config import fileConfig
 
@@ -9,10 +8,14 @@ from sqlalchemy import create_engine, pool
 # Load environment variables from .env
 load_dotenv()
 
-# Add app directory to Python path (so Alembic can import models)
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+# Add project root to Python path so Alembic can import the app package
+from pathlib import Path
 
-from core.database import Base
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.append(str(PROJECT_ROOT))
+
+from app.core.database import Base, SQLALCHEMY_DATABASE_URL
+import app.models  # noqa: F401
 
 # Alembic Config object
 config = context.config
@@ -23,17 +26,6 @@ if config.config_file_name is not None:
 
 # Set target metadata for Alembic migrations
 target_metadata = Base.metadata
-
-# Build SQLAlchemy connection URL dynamically from environment variables
-DB_USER = os.getenv("POSTGRES_USER", "postgres")
-DB_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
-DB_HOST = os.getenv("POSTGRES_HOST", "localhost")
-DB_PORT = os.getenv("POSTGRES_PORT", "5432")
-DB_NAME = os.getenv("POSTGRES_DB", "mydatabase")
-
-SQLALCHEMY_DATABASE_URL = (
-    f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-)
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode (no DB connection)."""

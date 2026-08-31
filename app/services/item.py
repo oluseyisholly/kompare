@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
-from models.item import Item
-from services.base import BaseService
+from app.models.item import Item
+from app.services.base import BaseService
 
 
 class ItemService(BaseService):

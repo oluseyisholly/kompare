@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from core.database import get_db
-from schemas.item import ItemCreate, ItemRead
-from services.item import ItemService
+from app.core.database import get_db
+from app.schemas.item import ItemCreate, ItemRead
+from app.services.item import ItemService
 
 router = APIRouter(prefix="/items", tags=["items"])
 

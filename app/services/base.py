@@ -1,12 +1,12 @@
 from typing import Dict, List, Type, TypeVar
 
-from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 
-from core.logger import logger
+from app.core.exceptions import NotFoundError
+from app.core.logger import logger
 
 ModelType = TypeVar("ModelType")
 
@@ -50,9 +50,9 @@ class BaseService:
         primary_key_field = getattr(self.model, self.pk_name)
         item = self.db.query(self.model).filter(primary_key_field == item_id).first()
         if not item:
-            raise HTTPException(
-                status_code=404,
-                detail=f"{self.model.__name__} with ID {item_id} not found",
+            raise NotFoundError(
+                f"{self.model.__name__} with ID {item_id} not found",
+                data={"item_id": item_id, "model": self.model.__name__},
             )
         logger.info(f"Retrieved {self.model.__name__} with ID {item_id}")
         return item
@@ -67,9 +67,9 @@ class BaseService:
         )
         if not item:
             logger.warning(f"{self.model.__name__} with ID {item_id} not found")
-            raise HTTPException(
-                status_code=404,
-                detail=f"{self.model.__name__} with ID {item_id} not found",
+            raise NotFoundError(
+                f"{self.model.__name__} with ID {item_id} not found",
+                data={"item_id": item_id, "model": self.model.__name__},
             )
 
         for key, value in item_data.dict(exclude_unset=True).items():
@@ -92,9 +92,9 @@ class BaseService:
             logger.warning(
                 f"{self.model.__name__} with ID {item_id} not found for deletion"
             )
-            raise HTTPException(
-                status_code=404,
-                detail=f"{self.model.__name__} with ID {item_id} not found",
+            raise NotFoundError(
+                f"{self.model.__name__} with ID {item_id} not found",
+                data={"item_id": item_id, "model": self.model.__name__},
             )
 
         self.db.delete(item)
