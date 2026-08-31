@@ -4,7 +4,6 @@ from .asset import Asset
 from .fee import FeeProfile, FeeRule
 from .fetch_run import FetchRun
 from .ingestion_schedule import IngestionSchedule
-from .item import Item
 from .kyc import KycLevel, KycProfile
 from .provider import Provider
 from .provider_asset import ProviderAsset
@@ -19,7 +18,6 @@ __all__ = [
     "FeeRule",
     "FetchRun",
     "IngestionSchedule",
-    "Item",
     "KycLevel",
     "KycProfile",
     "Provider",
