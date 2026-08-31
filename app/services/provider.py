@@ -105,7 +105,7 @@ class ProviderService:
             data=self._to_schema(updated),
         )
 
-    def trigger_bootstrap(self, slug: str | None = None) -> ApiResponse[dict]:
+    async def trigger_bootstrap(self, slug: str | None = None) -> ApiResponse[dict]:
         if slug is not None:
             provider = self._get_provider_or_raise(slug)
             if not provider.has_adapter:

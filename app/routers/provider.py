@@ -36,22 +36,22 @@ def update_provider(
 
 
 @router.post("/bootstrap", response_model=ApiResponse[dict], status_code=202)
-def trigger_all_provider_bootstrap(
+async def trigger_all_provider_bootstrap(
     service: ProviderService = Depends(get_provider_service),
     current_user: User = Depends(require_admin),
 ) -> ApiResponse[dict]:
     del current_user
-    return service.trigger_bootstrap()
+    return await service.trigger_bootstrap()
 
 
 @router.post("/{slug}/bootstrap", response_model=ApiResponse[dict], status_code=202)
-def trigger_provider_bootstrap(
+async def trigger_provider_bootstrap(
     slug: str,
     service: ProviderService = Depends(get_provider_service),
     current_user: User = Depends(require_admin),
 ) -> ApiResponse[dict]:
     del current_user
-    return service.trigger_bootstrap(slug)
+    return await service.trigger_bootstrap(slug)
 
 
 @router.get("/{slug}/ingestion-schedules", response_model=ApiResponse[list[IngestionScheduleRead]])
