@@ -6,6 +6,7 @@ from app.models.kyc import KycProfile
 from app.models.provider_asset import ProviderAsset
 from app.models.quote import Quote
 from app.models.raw_record import RawRecord
+from app.repositories.pagination import paginate_query
 
 
 class PlatformRepository:
@@ -22,9 +23,7 @@ class PlatformRepository:
             .filter(ProviderAsset.provider == provider)
             .order_by(ProviderAsset.provider_symbol.asc())
         )
-        total = query.count()
-        rows = query.offset((page - 1) * per_page).limit(per_page).all()
-        return rows, total
+        return paginate_query(query, page=page, per_page=per_page)
 
     def get_quotes(self, provider: ProviderName, *, page: int, per_page: int) -> tuple[list[Quote], int]:
         query = (
@@ -33,9 +32,7 @@ class PlatformRepository:
             .filter(Quote.provider == provider)
             .order_by(Quote.captured_at.desc(), Quote.id.desc())
         )
-        total = query.count()
-        rows = query.offset((page - 1) * per_page).limit(per_page).all()
-        return rows, total
+        return paginate_query(query, page=page, per_page=per_page)
 
     def get_fetch_runs(self, provider: ProviderName, *, page: int, per_page: int) -> tuple[list[FetchRun], int]:
         query = (
@@ -43,9 +40,7 @@ class PlatformRepository:
             .filter(FetchRun.provider == provider)
             .order_by(FetchRun.started_at.desc(), FetchRun.id.desc())
         )
-        total = query.count()
-        rows = query.offset((page - 1) * per_page).limit(per_page).all()
-        return rows, total
+        return paginate_query(query, page=page, per_page=per_page)
 
     def get_raw_records(self, provider: ProviderName, *, page: int, per_page: int) -> tuple[list[RawRecord], int]:
         query = (
@@ -53,9 +48,7 @@ class PlatformRepository:
             .filter(RawRecord.provider == provider)
             .order_by(RawRecord.fetched_at.desc(), RawRecord.id.desc())
         )
-        total = query.count()
-        rows = query.offset((page - 1) * per_page).limit(per_page).all()
-        return rows, total
+        return paginate_query(query, page=page, per_page=per_page)
 
     def get_kyc_profiles(self, provider: ProviderName, *, page: int, per_page: int) -> tuple[list[KycProfile], int]:
         query = (
@@ -64,6 +57,4 @@ class PlatformRepository:
             .filter(KycProfile.provider == provider)
             .order_by(KycProfile.fetched_at.desc(), KycProfile.id.desc())
         )
-        total = query.count()
-        rows = query.offset((page - 1) * per_page).limit(per_page).all()
-        return rows, total
+        return paginate_query(query, page=page, per_page=per_page)

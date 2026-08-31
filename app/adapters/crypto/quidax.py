@@ -6,6 +6,7 @@ from typing import Any
 import httpx
 from bs4 import Tag
 
+from app.core.config import QUIDAX_API_KEY, QUIDAX_BASE_URL, QUIDAX_KYC_URL
 from app.models.enums import MarketCategory, ProviderName
 from app.utils.http_client import get_json
 from app.utils.scraper import get_browser_headers, render_browser_soup
@@ -16,15 +17,16 @@ class QuidaxAdapter:
     category = MarketCategory.CRYPTO.value
     markets_path = "/exchange-open-api/api/v1/markets"
     tickers_path = "/exchange-open-api/api/v1/markets/tickers"
-    kyc_url = "https://support.quidax.io/hc/en-us/articles/13812153745564-KYC-Documents-and-Limits"
 
     def __init__(
         self,
-        base_url: str = "https://openapi.quidax.io",
-        api_key: str | None = None,
+        base_url: str = QUIDAX_BASE_URL,
+        api_key: str | None = QUIDAX_API_KEY,
+        kyc_url: str = QUIDAX_KYC_URL,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
+        self.kyc_url = kyc_url
 
     @property
     def markets_url(self) -> str:

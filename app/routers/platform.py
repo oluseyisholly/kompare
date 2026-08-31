@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from app.dependencies import get_platform_service
+from app.dependencies.auth import require_admin
+from app.models.user import User
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.platform import (
     FetchRunRead,
@@ -74,5 +76,7 @@ def create_platform_kyc(
     provider: str,
     payload: KycProfileCreate,
     service: PlatformService = Depends(get_platform_service),
+    current_user: User = Depends(require_admin),
 ) -> ApiResponse[KycProfileRead]:
+    del current_user
     return service.create_kyc_profile(provider, payload)

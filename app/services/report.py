@@ -3,7 +3,7 @@ from decimal import Decimal
 from app.core.exceptions import NotFoundError
 from app.models.enums import FetchRunStatus, ProviderName
 from app.repositories.report import ReportRepository
-from app.schemas.common import ApiResponse, PaginatedData, build_pagination
+from app.schemas.common import ApiResponse, PaginatedData, build_paginated_response
 from app.schemas.report import (
     ExchangeBuyPreviewReport,
     ExchangeSellPreviewReport,
@@ -82,10 +82,12 @@ class ReportService:
             )
             for row in rows
         ]
-        return ApiResponse(
-            responseCode=200,
+        return build_paginated_response(
+            items=items,
+            page=page,
+            per_page=per_page,
+            total=total,
             message="Latest rates retrieved successfully",
-            data=PaginatedData(items=items, pagination=build_pagination(page=page, per_page=per_page, total=total)),
         )
 
     def get_ingestion_health(self, provider: str) -> ApiResponse[IngestionHealthReport]:

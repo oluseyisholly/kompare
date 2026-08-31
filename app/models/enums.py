@@ -46,3 +46,14 @@ class FeeType(str, Enum):
     PERCENTAGE = "percentage"
     SPREAD = "spread"
     TIERED = "tiered"
+
+
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    USER = "user"
+
+
+class IngestionJobType(str, Enum):
+    MARKET_DATA = "market_data"
+    KYC = "kyc"
+    FEES = "fees"

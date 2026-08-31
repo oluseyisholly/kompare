@@ -105,6 +105,48 @@ class QuidaxIngestionService:
             logger.exception("Quidax ingestion failed")
             raise
 
+    async def ingest_market_data(self) -> dict[str, int]:
+        return await self.ingest(include_kyc=False)
+
+    async def ingest_kyc(self) -> dict[str, int]:
+        fetch_run = self.fetch_run_repository.create_pending(ProviderName.QUIDAX)
+
+        try:
+            async with httpx.AsyncClient() as client:
+                kyc_document = await self.adapter.fetch_kyc_document(client=client)
+
+            kyc_raw = self.raw_record_repository.create(
+                provider=ProviderName.QUIDAX,
+                fetch_run_id=fetch_run.id,
+                source_type=RawSourceType.HTML,
+                source_url=self.adapter.kyc_url,
+                payload=kyc_document,
+                raw_text=kyc_document["content"],
+            )
+            kyc_levels_created = self.kyc_repository.create_profile_with_levels(
+                provider=ProviderName.QUIDAX,
+                source_url=self.adapter.kyc_url,
+                fetch_run=fetch_run,
+                raw_record=kyc_raw,
+                kyc_document=kyc_document,
+            )
+
+            self.fetch_run_repository.mark_success(
+                fetch_run,
+                records_fetched=kyc_levels_created,
+            )
+
+            return {
+                "fetch_run_id": fetch_run.id,
+                "quotes_created": 0,
+                "kyc_levels_created": kyc_levels_created,
+            }
+        except Exception as exc:
+            self.db.rollback()
+            self.fetch_run_repository.mark_failed(fetch_run, error_message=str(exc))
+            logger.exception("Quidax KYC ingestion failed")
+            raise
+
     def _persist_tickers(
         self,
         *,

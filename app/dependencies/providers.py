@@ -6,6 +6,7 @@ from app.adapters.crypto.quidax import QuidaxAdapter
 from app.core.database import get_db
 from app.repositories.asset import AssetRepository
 from app.repositories.fetch_run import FetchRunRepository
+from app.repositories.ingestion_schedule import IngestionScheduleRepository
 from app.repositories.kyc import KycRepository
 from app.repositories.platform import PlatformRepository
 from app.repositories.provider import ProviderRepository
@@ -13,6 +14,8 @@ from app.repositories.provider_asset import ProviderAssetRepository
 from app.repositories.quote import QuoteRepository
 from app.repositories.raw_record import RawRecordRepository
 from app.repositories.report import ReportRepository
+from app.repositories.user import UserRepository
+from app.services.auth import AuthService
 from app.services.busha import BushaService
 from app.services.ingestion.busha import BushaIngestionService
 from app.services.ingestion.focus import FocusAssetSelector
@@ -45,6 +48,14 @@ def get_platform_repository(db: Session = Depends(get_db)) -> PlatformRepository
 
 def get_provider_repository(db: Session = Depends(get_db)) -> ProviderRepository:
     return ProviderRepository(db)
+
+
+def get_ingestion_schedule_repository(db: Session = Depends(get_db)) -> IngestionScheduleRepository:
+    return IngestionScheduleRepository(db)
+
+
+def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
+    return UserRepository(db)
 
 
 def get_report_repository(db: Session = Depends(get_db)) -> ReportRepository:
@@ -80,8 +91,18 @@ def get_platform_service(
 
 def get_provider_service(
     repository: ProviderRepository = Depends(get_provider_repository),
+    ingestion_schedule_repository: IngestionScheduleRepository = Depends(get_ingestion_schedule_repository),
 ) -> ProviderService:
-    return ProviderService(repository=repository)
+    return ProviderService(
+        repository=repository,
+        ingestion_schedule_repository=ingestion_schedule_repository,
+    )
+
+
+def get_auth_service(
+    repository: UserRepository = Depends(get_user_repository),
+) -> AuthService:
+    return AuthService(repository=repository)
 
 
 def get_report_service(

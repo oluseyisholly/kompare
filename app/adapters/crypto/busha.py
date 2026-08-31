@@ -6,6 +6,12 @@ from typing import Any
 import httpx
 from bs4 import Tag
 
+from app.core.config import (
+    BUSHA_API_KEY,
+    BUSHA_BASE_URL,
+    BUSHA_KYC_IDENTITY_URL,
+    BUSHA_KYC_LIMITS_URL,
+)
 from app.models.enums import MarketCategory, ProviderName
 from app.utils.http_client import get_json
 from app.utils.scraper import get_browser_headers, render_browser_soup
@@ -15,16 +21,18 @@ class BushaAdapter:
     name = ProviderName.BUSHA.value
     category = MarketCategory.CRYPTO.value
     pairs_path = "/v1/pairs"
-    kyc_identity_url = "https://support.busha.io/en/articles/2631291-how-do-i-verify-my-identity"
-    kyc_limits_url = "https://support.busha.io/en/articles/2137037-verification-levels-and-limits"
 
     def __init__(
         self,
-        base_url: str = "https://api.sandbox.busha.so",
-        api_key: str | None = None,
+        base_url: str = BUSHA_BASE_URL,
+        api_key: str | None = BUSHA_API_KEY,
+        kyc_identity_url: str = BUSHA_KYC_IDENTITY_URL,
+        kyc_limits_url: str = BUSHA_KYC_LIMITS_URL,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
+        self.kyc_identity_url = kyc_identity_url
+        self.kyc_limits_url = kyc_limits_url
 
     @property
     def pairs_url(self) -> str:

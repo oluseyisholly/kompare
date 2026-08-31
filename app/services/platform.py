@@ -1,8 +1,8 @@
 from app.core.exceptions import BadRequestError, NotFoundError
-from app.repositories.kyc import KycRepository
 from app.models.enums import ProviderName
+from app.repositories.kyc import KycRepository
 from app.repositories.platform import PlatformRepository
-from app.schemas.common import ApiResponse, PaginatedData, build_pagination
+from app.schemas.common import ApiResponse, PaginatedData, build_paginated_response
 from app.schemas.platform import (
     FetchRunRead,
     KycProfileCreate,
@@ -51,10 +51,12 @@ class PlatformService:
             )
             for row in rows
         ]
-        return ApiResponse(
-            responseCode=200,
+        return build_paginated_response(
+            items=items,
+            page=page,
+            per_page=per_page,
+            total=total,
             message="Platform assets retrieved successfully",
-            data=PaginatedData(items=items, pagination=build_pagination(page=page, per_page=per_page, total=total)),
         )
 
     def get_quotes(self, provider: str, *, page: int, per_page: int) -> ApiResponse[PaginatedData[PlatformQuoteRead]]:
@@ -76,10 +78,12 @@ class PlatformService:
             )
             for row in rows
         ]
-        return ApiResponse(
-            responseCode=200,
+        return build_paginated_response(
+            items=items,
+            page=page,
+            per_page=per_page,
+            total=total,
             message="Platform quotes retrieved successfully",
-            data=PaginatedData(items=items, pagination=build_pagination(page=page, per_page=per_page, total=total)),
         )
 
     def get_fetch_runs(self, provider: str, *, page: int, per_page: int) -> ApiResponse[PaginatedData[FetchRunRead]]:
@@ -98,10 +102,12 @@ class PlatformService:
             )
             for row in rows
         ]
-        return ApiResponse(
-            responseCode=200,
+        return build_paginated_response(
+            items=items,
+            page=page,
+            per_page=per_page,
+            total=total,
             message="Platform fetch runs retrieved successfully",
-            data=PaginatedData(items=items, pagination=build_pagination(page=page, per_page=per_page, total=total)),
         )
 
     def get_raw_records(self, provider: str, *, page: int, per_page: int) -> ApiResponse[PaginatedData[RawRecordRead]]:
@@ -121,10 +127,12 @@ class PlatformService:
             )
             for row in rows
         ]
-        return ApiResponse(
-            responseCode=200,
+        return build_paginated_response(
+            items=items,
+            page=page,
+            per_page=per_page,
+            total=total,
             message="Platform raw records retrieved successfully",
-            data=PaginatedData(items=items, pagination=build_pagination(page=page, per_page=per_page, total=total)),
         )
 
     def get_kyc_profiles(self, provider: str, *, page: int, per_page: int) -> ApiResponse[PaginatedData[KycProfileRead]]:
@@ -142,10 +150,12 @@ class PlatformService:
             )
             for row in rows
         ]
-        return ApiResponse(
-            responseCode=200,
+        return build_paginated_response(
+            items=items,
+            page=page,
+            per_page=per_page,
+            total=total,
             message="Platform KYC profiles retrieved successfully",
-            data=PaginatedData(items=items, pagination=build_pagination(page=page, per_page=per_page, total=total)),
         )
 
     def create_kyc_profile(

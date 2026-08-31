@@ -36,3 +36,26 @@ def build_pagination(*, page: int, per_page: int, total: int) -> PaginationMeta:
         has_next=page < total_pages,
         has_previous=page > 1,
     )
+
+
+def build_paginated_data(*, items: list[T], page: int, per_page: int, total: int) -> PaginatedData[T]:
+    return PaginatedData(
+        items=items,
+        pagination=build_pagination(page=page, per_page=per_page, total=total),
+    )
+
+
+def build_paginated_response(
+    *,
+    items: list[T],
+    page: int,
+    per_page: int,
+    total: int,
+    message: str,
+    response_code: int = 200,
+) -> ApiResponse[PaginatedData[T]]:
+    return ApiResponse(
+        responseCode=response_code,
+        message=message,
+        data=build_paginated_data(items=items, page=page, per_page=per_page, total=total),
+    )

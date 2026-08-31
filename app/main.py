@@ -3,8 +3,9 @@ from fastapi.responses import RedirectResponse
 
 from app.core.error_handlers import register_exception_handlers
 from app.core.logger import logger
+from app.services.ingestion_scheduler import IngestionSchedulerService
 import app.models  # noqa: F401
-from app.routers import busha_router, item_router, platform_router, provider_router, quidax_router, report_router
+from app.routers import auth_router, busha_router, item_router, platform_router, provider_router, quidax_router, report_router
 
 # Initialize FastAPI application with metadata
 app = FastAPI(
@@ -16,14 +17,27 @@ app = FastAPI(
 
 register_exception_handlers(app)
 
+scheduler = IngestionSchedulerService()
+
 # Include API routers
 app.include_router(item_router)
+app.include_router(auth_router)
 app.include_router(busha_router)
 app.include_router(platform_router)
 app.include_router(provider_router)
 app.include_router(quidax_router)
 app.include_router(report_router)
 logger.info("API routers registered.")
+
+
+@app.on_event("startup")
+async def start_scheduler() -> None:
+    await scheduler.start()
+
+
+@app.on_event("shutdown")
+async def stop_scheduler() -> None:
+    await scheduler.stop()
 
 
 

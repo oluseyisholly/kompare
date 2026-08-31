@@ -7,6 +7,7 @@ from app.models.kyc import KycProfile
 from app.models.provider_asset import ProviderAsset
 from app.models.quote import Quote
 from app.models.raw_record import RawRecord
+from app.repositories.pagination import paginate_query
 
 
 class ReportRepository:
@@ -46,9 +47,7 @@ class ReportRepository:
             .filter(Quote.provider == provider)
             .order_by(Quote.captured_at.desc(), Quote.id.desc())
         )
-        total = query.count()
-        rows = query.offset((page - 1) * per_page).limit(per_page).all()
-        return rows, total
+        return paginate_query(query, page=page, per_page=per_page)
 
     def get_latest_quote_for_pair(
         self,

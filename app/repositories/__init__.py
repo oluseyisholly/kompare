@@ -8,6 +8,7 @@ from app.repositories.provider_asset import ProviderAssetRepository
 from app.repositories.quote import QuoteRepository
 from app.repositories.raw_record import RawRecordRepository
 from app.repositories.report import ReportRepository
+from app.repositories.user import UserRepository
 
 __all__ = [
     "AssetRepository",
@@ -21,4 +22,5 @@ __all__ = [
     "QuoteRepository",
     "RawRecordRepository",
     "ReportRepository",
+    "UserRepository",
 ]
