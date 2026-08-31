@@ -9,6 +9,7 @@ from app.schemas.report import (
     KycSummaryReport,
     LatestRateReportRow,
     PlatformSummaryReport,
+    QuoteTrendReport,
     RawActivityRow,
 )
 from app.services.report import ReportService
@@ -105,4 +106,20 @@ def get_exchange_spread(
         provider,
         base_currency=base_currency,
         quote_currency=quote_currency,
+    )
+
+
+@router.get("/platforms/{provider}/quotes/trend", response_model=ApiResponse[QuoteTrendReport])
+def get_quote_trend(
+    provider: str,
+    base_currency: str = Query(..., min_length=1),
+    quote_currency: str = Query(..., min_length=1),
+    period: str = Query(..., pattern="^(24h|7d|30d|90d)$"),
+    service: ReportService = Depends(get_report_service),
+) -> ApiResponse[QuoteTrendReport]:
+    return service.get_quote_trend(
+        provider,
+        base_currency=base_currency,
+        quote_currency=quote_currency,
+        period=period,
     )

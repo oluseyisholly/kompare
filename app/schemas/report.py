@@ -105,3 +105,23 @@ class ExchangeSpreadReport(BaseModel):
     spread: Decimal | None
     spread_percent: Decimal | None
     captured_at: datetime
+
+
+class QuoteTrendPoint(BaseModel):
+    captured_at: datetime
+    buy_rate: Decimal | None
+    sell_rate: Decimal | None
+    mid_rate: Decimal | None
+    market_price: Decimal | None
+
+
+class QuoteTrendReport(BaseModel):
+    provider: str
+    provider_symbol: str | None
+    base_currency: str
+    quote_currency: str
+    period: str
+    points_count: int
+    started_at: datetime
+    ended_at: datetime
+    points: list[QuoteTrendPoint]

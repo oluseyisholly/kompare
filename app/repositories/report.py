@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
@@ -66,6 +68,29 @@ class ReportRepository:
             )
             .order_by(Quote.captured_at.desc(), Quote.id.desc())
             .first()
+        )
+
+    def get_quote_trend(
+        self,
+        provider: ProviderName,
+        *,
+        base_currency: str,
+        quote_currency: str,
+        started_at: datetime,
+        ended_at: datetime,
+    ) -> list[Quote]:
+        return (
+            self.db.query(Quote)
+            .options(joinedload(Quote.provider_asset))
+            .filter(
+                Quote.provider == provider,
+                Quote.base_currency == base_currency,
+                Quote.quote_currency == quote_currency,
+                Quote.captured_at >= started_at,
+                Quote.captured_at <= ended_at,
+            )
+            .order_by(Quote.captured_at.asc(), Quote.id.asc())
+            .all()
         )
 
     def get_runs(self, provider: ProviderName) -> list[FetchRun]:

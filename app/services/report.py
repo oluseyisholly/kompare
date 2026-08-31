@@ -1,6 +1,7 @@
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import BadRequestError, NotFoundError
 from app.models.enums import FetchRunStatus, ProviderName
 from app.repositories.report import ReportRepository
 from app.schemas.common import ApiResponse, PaginatedData, build_paginated_response
@@ -13,6 +14,8 @@ from app.schemas.report import (
     KycSummaryReport,
     LatestRateReportRow,
     PlatformSummaryReport,
+    QuoteTrendPoint,
+    QuoteTrendReport,
     RawActivityRow,
 )
 
@@ -41,6 +44,22 @@ class ReportService:
         if buy_rate in (None, Decimal("0")) or sell_rate is None:
             return None
         return ((sell_rate - buy_rate) / buy_rate) * Decimal("100")
+
+    @staticmethod
+    def _resolve_period(period: str) -> timedelta:
+        normalized = period.lower()
+        mapping = {
+            "24h": timedelta(hours=24),
+            "7d": timedelta(days=7),
+            "30d": timedelta(days=30),
+            "90d": timedelta(days=90),
+        }
+        if normalized not in mapping:
+            raise BadRequestError(
+                "Invalid trend period",
+                data={"period": period, "allowed_values": list(mapping.keys())},
+            )
+        return mapping[normalized]
 
     def get_platform_summary(self, provider: str) -> ApiResponse[PlatformSummaryReport]:
         provider_enum = self._provider_or_404(provider)
@@ -272,5 +291,61 @@ class ReportService:
                 spread=self._compute_spread(quote.buy_rate, quote.sell_rate),
                 spread_percent=self._compute_spread_percent(quote.buy_rate, quote.sell_rate),
                 captured_at=quote.captured_at,
+            ),
+        )
+
+    def get_quote_trend(
+        self,
+        provider: str,
+        *,
+        base_currency: str,
+        quote_currency: str,
+        period: str,
+    ) -> ApiResponse[QuoteTrendReport]:
+        provider_enum = self._provider_or_404(provider)
+        duration = self._resolve_period(period)
+        ended_at = datetime.now(UTC)
+        started_at = ended_at - duration
+        rows = self.repository.get_quote_trend(
+            provider_enum,
+            base_currency=base_currency.upper(),
+            quote_currency=quote_currency.upper(),
+            started_at=started_at,
+            ended_at=ended_at,
+        )
+        if not rows:
+            raise NotFoundError(
+                "No quote trend data found for the requested pair and period",
+                data={
+                    "provider": provider,
+                    "base_currency": base_currency,
+                    "quote_currency": quote_currency,
+                    "period": period,
+                },
+            )
+
+        latest = rows[-1]
+        return ApiResponse(
+            responseCode=200,
+            message="Quote trend retrieved successfully",
+            data=QuoteTrendReport(
+                provider=provider_enum.value,
+                provider_symbol=latest.provider_asset.provider_symbol if latest.provider_asset else None,
+                base_currency=base_currency.upper(),
+                quote_currency=quote_currency.upper(),
+                period=period.lower(),
+                points_count=len(rows),
+                started_at=started_at,
+                ended_at=ended_at,
+                points=[
+                    QuoteTrendPoint(
+                        captured_at=row.captured_at,
+                        buy_rate=row.buy_rate,
+                        sell_rate=row.sell_rate,
+                        mid_rate=row.mid_rate,
+                        market_price=row.market_price,
+                    )
+                    for row in rows
+                ],
             ),
         )
