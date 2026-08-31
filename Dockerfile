@@ -47,7 +47,10 @@ RUN uv export --no-dev --format requirements-txt > /tmp/requirements.txt && \
     python -m playwright install chromium
 
 COPY app ./app
+COPY start.sh ./start.sh
+
+RUN chmod +x /app/start.sh
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/app/start.sh"]
