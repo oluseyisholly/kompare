@@ -25,4 +25,3 @@ class IngestionScheduleUpsert(BaseModel):
     is_enabled: bool = True
     next_run_at: datetime | None = None
     notes: str | None = None
-    metadata_json: dict | None = None

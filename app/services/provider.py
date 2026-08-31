@@ -135,7 +135,6 @@ class ProviderService:
             "is_enabled": payload.is_enabled,
             "next_run_at": next_run_at,
             "notes": payload.notes,
-            "metadata_json": payload.metadata_json,
         }
 
         if existing is None:
