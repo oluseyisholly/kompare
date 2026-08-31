@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import inspect
 
 
 # revision identifiers, used by Alembic.
@@ -19,10 +20,24 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column("kyc_levels", sa.Column("fiat_deposit_limit", sa.String(), nullable=True))
-    op.add_column("kyc_levels", sa.Column("crypto_deposit_limit", sa.String(), nullable=True))
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    existing_columns = {column["name"] for column in inspector.get_columns("kyc_levels")}
+
+    if "fiat_deposit_limit" not in existing_columns:
+        op.add_column("kyc_levels", sa.Column("fiat_deposit_limit", sa.String(), nullable=True))
+
+    if "crypto_deposit_limit" not in existing_columns:
+        op.add_column("kyc_levels", sa.Column("crypto_deposit_limit", sa.String(), nullable=True))
 
 
 def downgrade() -> None:
-    op.drop_column("kyc_levels", "crypto_deposit_limit")
-    op.drop_column("kyc_levels", "fiat_deposit_limit")
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    existing_columns = {column["name"] for column in inspector.get_columns("kyc_levels")}
+
+    if "crypto_deposit_limit" in existing_columns:
+        op.drop_column("kyc_levels", "crypto_deposit_limit")
+
+    if "fiat_deposit_limit" in existing_columns:
+        op.drop_column("kyc_levels", "fiat_deposit_limit")
