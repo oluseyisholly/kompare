@@ -8,8 +8,8 @@ import httpx
 from app.adapters.crypto.busha import BushaAdapter
 from app.adapters.crypto.quidax import QuidaxAdapter
 from app.core.database import SessionLocal
-from app.core.logger import logger
 from app.core.focus_assets import FOCUS_ASSET_CODES
+from app.core.logger import logger
 from app.models.enums import MarketCategory, ProviderName
 from app.repositories.asset import AssetRepository
 from app.repositories.provider_asset import ProviderAssetRepository
@@ -191,10 +191,15 @@ async def run_bootstrap_job(provider_slug: str | None = None) -> None:
         )
         if provider_slug:
             result = await service.run_provider(provider_slug)
-            logger.info("Bootstrap ingestion completed for provider=%s result=%s", provider_slug, result)
-        else:
-            result = await service.run()
-            logger.info("Bootstrap ingestion completed for all providers result=%s", result)
+            logger.info(
+                "Bootstrap ingestion completed for provider=%s result=%s",
+                provider_slug,
+                result,
+            )
+            return
+
+        result = await service.run()
+        logger.info("Bootstrap ingestion completed for all providers result=%s", result)
     except Exception:
         logger.exception("Bootstrap ingestion failed for provider=%s", provider_slug or "all")
     finally:
