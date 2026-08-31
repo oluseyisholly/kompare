@@ -11,6 +11,7 @@ from app.repositories.provider import ProviderRepository
 from app.schemas.common import ApiResponse
 from app.schemas.ingestion_schedule import IngestionScheduleRead, IngestionScheduleUpsert
 from app.schemas.provider import ProviderRead, ProviderUpdate
+from app.services.ingestion.bootstrap import launch_bootstrap_job
 
 
 class ProviderService:
@@ -102,6 +103,28 @@ class ProviderService:
             responseCode=200,
             message="Provider updated successfully",
             data=self._to_schema(updated),
+        )
+
+    def trigger_bootstrap(self, slug: str | None = None) -> ApiResponse[dict]:
+        if slug is not None:
+            provider = self._get_provider_or_raise(slug)
+            if not provider.has_adapter:
+                raise BadRequestError(
+                    "Provider does not have an adapter configured",
+                    data={"slug": slug},
+                )
+            launch_bootstrap_job(provider.slug)
+            return ApiResponse(
+                responseCode=202,
+                message="Provider bootstrap started",
+                data={"provider": provider.slug, "status": "accepted"},
+            )
+
+        launch_bootstrap_job()
+        return ApiResponse(
+            responseCode=202,
+            message="Bootstrap started for supported providers",
+            data={"provider": "all", "status": "accepted"},
         )
 
     def list_ingestion_schedules(self, slug: str) -> ApiResponse[list[IngestionScheduleRead]]:

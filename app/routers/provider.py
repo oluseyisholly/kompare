@@ -35,6 +35,25 @@ def update_provider(
     return service.update_provider(slug, payload)
 
 
+@router.post("/bootstrap", response_model=ApiResponse[dict], status_code=202)
+def trigger_all_provider_bootstrap(
+    service: ProviderService = Depends(get_provider_service),
+    current_user: User = Depends(require_admin),
+) -> ApiResponse[dict]:
+    del current_user
+    return service.trigger_bootstrap()
+
+
+@router.post("/{slug}/bootstrap", response_model=ApiResponse[dict], status_code=202)
+def trigger_provider_bootstrap(
+    slug: str,
+    service: ProviderService = Depends(get_provider_service),
+    current_user: User = Depends(require_admin),
+) -> ApiResponse[dict]:
+    del current_user
+    return service.trigger_bootstrap(slug)
+
+
 @router.get("/{slug}/ingestion-schedules", response_model=ApiResponse[list[IngestionScheduleRead]])
 def list_provider_ingestion_schedules(
     slug: str,
