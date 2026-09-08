@@ -31,5 +31,19 @@ BUSHA_KYC_LIMITS_URL = os.getenv(
     "https://support.busha.io/en/articles/2137037-verification-levels-and-limits",
 )
 
+CARDTONIC_BASE_URL = os.getenv("CARDTONIC_BASE_URL", "https://api.cardtonic.com")
+CARDTONIC_SITE_URL = os.getenv("CARDTONIC_SITE_URL", "https://cardtonic.com")
+CARDTONIC_API_ENV = os.getenv("CARDTONIC_API_ENV", "production")
+CARDTONIC_KYC_URL = os.getenv("CARDTONIC_KYC_URL", "https://help.cardtonic.com/en/articles/6811777-what-is-kyc-and-how-does-it-apply-to-cardtonic")
+
+TBAY_BASE_URL = os.getenv("TBAY_BASE_URL", "https://api.tbay.store")
+TBAY_SITE_URL = os.getenv("TBAY_SITE_URL", "https://h5.tbay.store")
+TBAY_CLIENT_VERSION = os.getenv("TBAY_CLIENT_VERSION", "1.10.16")
+TBAY_SIGNING_SALT = os.getenv("TBAY_SIGNING_SALT", "IgaO0cpIJp")
+
+SECRET_KEY = os.getenv("SECRET_KEY", "kompare-dev-secret")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
+
 ENABLE_INGESTION_SCHEDULER = _get_bool("ENABLE_INGESTION_SCHEDULER", False)
 INGESTION_SCHEDULER_POLL_SECONDS = int(os.getenv("INGESTION_SCHEDULER_POLL_SECONDS", "60"))

@@ -1,14 +1,16 @@
 from datetime import UTC, datetime, timedelta
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
-from app.core.exceptions import BadRequestError, NotFoundError
-from app.models.enums import FetchRunStatus, ProviderName
+from app.core.exceptions import BadRequestError, ConflictError, NotFoundError
+from app.models.enums import FetchRunStatus, GiftCardType, ProviderName
+from app.repositories.provider import ProviderRepository
 from app.repositories.report import ReportRepository
 from app.schemas.common import ApiResponse, PaginatedData, build_paginated_response
 from app.schemas.report import (
     ExchangeBuyPreviewReport,
     ExchangeSellPreviewReport,
     ExchangeSpreadReport,
+    GiftCardSellPreviewReport,
     IngestionHealthReport,
     KycSummaryLevel,
     KycSummaryReport,
@@ -21,15 +23,16 @@ from app.schemas.report import (
 
 
 class ReportService:
-    def __init__(self, repository: ReportRepository) -> None:
+    def __init__(self, repository: ReportRepository, provider_repository: ProviderRepository) -> None:
         self.repository = repository
+        self.provider_repository = provider_repository
 
     def _provider_or_404(self, provider: str) -> ProviderName:
         try:
             return ProviderName(provider.lower())
         except ValueError as exc:
             raise NotFoundError(
-                f"Unknown platform: {provider}",
+                f"Unknown provider: {provider}",
                 data={"provider": provider},
             ) from exc
 
@@ -61,12 +64,26 @@ class ReportService:
             )
         return mapping[normalized]
 
+    def _parse_giftcard_type(self, card_type: str | None) -> GiftCardType | None:
+        if not card_type:
+            return None
+        try:
+            return GiftCardType(card_type.lower())
+        except ValueError as exc:
+            raise BadRequestError(
+                "Invalid gift card type",
+                data={
+                    "card_type": card_type,
+                    "allowed_values": [value.value for value in GiftCardType],
+                },
+            ) from exc
+
     def get_platform_summary(self, provider: str) -> ApiResponse[PlatformSummaryReport]:
         provider_enum = self._provider_or_404(provider)
         latest_fetch_run = self.repository.get_latest_fetch_run(provider_enum)
         return ApiResponse(
             responseCode=200,
-            message="Platform summary retrieved successfully",
+            message="Provider summary retrieved successfully",
             data=PlatformSummaryReport(
                 provider=provider_enum.value,
                 total_assets=self.repository.count_assets(provider_enum),
@@ -98,6 +115,7 @@ class ReportService:
                 spread=self._compute_spread(row.buy_rate, row.sell_rate),
                 spread_percent=self._compute_spread_percent(row.buy_rate, row.sell_rate),
                 captured_at=row.captured_at,
+                last_seen_at=row.last_seen_at,
             )
             for row in rows
         ]
@@ -219,6 +237,7 @@ class ReportService:
                 buy_rate=quote.buy_rate,
                 asset_received=asset_received,
                 captured_at=quote.captured_at,
+                last_seen_at=quote.last_seen_at,
             ),
         )
 
@@ -255,6 +274,7 @@ class ReportService:
                 sell_rate=quote.sell_rate,
                 quote_received=quote_received,
                 captured_at=quote.captured_at,
+                last_seen_at=quote.last_seen_at,
             ),
         )
 
@@ -291,6 +311,7 @@ class ReportService:
                 spread=self._compute_spread(quote.buy_rate, quote.sell_rate),
                 spread_percent=self._compute_spread_percent(quote.buy_rate, quote.sell_rate),
                 captured_at=quote.captured_at,
+                last_seen_at=quote.last_seen_at,
             ),
         )
 
@@ -324,7 +345,7 @@ class ReportService:
                 },
             )
 
-        latest = rows[-1]
+        latest = rows[-1][0]
         return ApiResponse(
             responseCode=200,
             message="Quote trend retrieved successfully",
@@ -339,13 +360,170 @@ class ReportService:
                 ended_at=ended_at,
                 points=[
                     QuoteTrendPoint(
-                        captured_at=row.captured_at,
+                        captured_at=observed_at,
                         buy_rate=row.buy_rate,
                         sell_rate=row.sell_rate,
                         mid_rate=row.mid_rate,
                         market_price=row.market_price,
                     )
-                    for row in rows
+                    for row, observed_at in rows
                 ],
+            ),
+        )
+
+    def get_giftcard_sell_preview(
+        self,
+        provider: str,
+        *,
+        asset_code: str | None,
+        rate_id: int | None,
+        source_currency: str | None,
+        face_value: Decimal,
+        region: str | None = None,
+        card_type: str | None = None,
+    ) -> ApiResponse[GiftCardSellPreviewReport]:
+        provider_row = self.provider_repository.get_by_slug(provider.lower())
+        if provider_row is None:
+            raise NotFoundError(
+                "Provider not found",
+                data={"provider": provider},
+            )
+
+        if rate_id is None and not asset_code:
+            raise BadRequestError(
+                "Either rate_id or asset_code must be provided",
+                data={"provider": provider},
+            )
+
+        if provider_row.slug == "tbay" and rate_id is None:
+            raise BadRequestError("Please provide rate_id to select a specific Tbay seller offer")
+
+        card_type_enum = self._parse_giftcard_type(card_type)
+        if rate_id is not None:
+            rate = self.repository.get_giftcard_rate_by_id(
+                provider_row.id,
+                rate_id=rate_id,
+            )
+            if rate is not None:
+                if rate.minimum_face_value is not None and face_value < rate.minimum_face_value:
+                    raise BadRequestError(
+                        "Face value is below the minimum supported value for this rate",
+                        data={
+                            "provider": provider,
+                            "rate_id": rate_id,
+                            "face_value": str(face_value),
+                            "minimum_face_value": str(rate.minimum_face_value),
+                        },
+                    )
+                if rate.maximum_face_value is not None and face_value > rate.maximum_face_value:
+                    raise BadRequestError(
+                        "Face value is above the maximum supported value for this rate",
+                        data={
+                            "provider": provider,
+                            "rate_id": rate_id,
+                            "face_value": str(face_value),
+                            "maximum_face_value": str(rate.maximum_face_value),
+                        },
+                    )
+        elif source_currency:
+            rate = self.repository.get_latest_giftcard_rate(
+                provider_row.id,
+                asset_code=asset_code,
+                source_currency=source_currency,
+                face_value=face_value,
+                region=region,
+                card_type=card_type_enum,
+            )
+        else:
+            matches = self.repository.get_matching_giftcard_rates(
+                provider_row.id,
+                asset_code=asset_code,
+                source_currency=None,
+                face_value=face_value,
+                region=region,
+                card_type=card_type_enum,
+            )
+            if not matches:
+                rate = None
+            else:
+                distinct_variants = {match.giftcard_variant_id for match in matches}
+                distinct_currencies = {match.source_currency for match in matches if match.source_currency}
+                if len(distinct_variants) > 1 or len(distinct_currencies) > 1:
+                    raise ConflictError(
+                        "Multiple gift card rate matches found. Please provide rate_id or more filters.",
+                        data={
+                            "provider": provider,
+                            "asset_code": asset_code,
+                            "face_value": str(face_value),
+                            "region": region,
+                            "card_type": card_type,
+                            "available_source_currencies": sorted(distinct_currencies),
+                            "matched_rate_ids": [match.id for match in matches],
+                            "matched_variants": [
+                                {
+                                    "rate_id": match.id,
+                                    "variant_name": match.giftcard_variant.name,
+                                    "region": match.giftcard_variant.region,
+                                    "source_currency": match.source_currency,
+                                    "card_type": (
+                                        match.giftcard_variant.card_type.value
+                                        if match.giftcard_variant.card_type
+                                        else None
+                                    ),
+                                }
+                                for match in matches
+                            ],
+                        },
+                    )
+                rate = matches[0]
+
+        if rate is None:
+            raise NotFoundError(
+                "Gift card rate not found for the requested criteria",
+                data={
+                    "provider": provider,
+                    "rate_id": rate_id,
+                    "asset_code": asset_code,
+                    "source_currency": source_currency,
+                    "face_value": str(face_value),
+                    "region": region,
+                    "card_type": card_type,
+                },
+            )
+
+        variant = rate.giftcard_variant
+        conditions = rate.metadata_json or {}
+        if conditions.get("whole_units_only") and face_value != face_value.to_integral_value():
+            raise BadRequestError("This offer requires a whole-number face value")
+        denominations = conditions.get("allowed_denominations") or []
+        if denominations and face_value not in {Decimal(x) for x in denominations}:
+            raise BadRequestError("Unsupported card denomination", data={"allowed_denominations": denominations})
+        if conditions.get("amount_step") and face_value % Decimal(conditions["amount_step"]) != 0:
+            raise BadRequestError("Face value does not match this offer's required increment",
+                                  data={"amount_step": conditions["amount_step"]})
+        payout_amount = face_value * rate.rate_value
+        if provider_row.slug == "tbay":
+            payout_amount = payout_amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return ApiResponse(
+            responseCode=200,
+            message="Gift card sell preview retrieved successfully",
+            data=GiftCardSellPreviewReport(
+                provider=provider_row.slug,
+                asset_code=variant.asset.code,
+                asset_name=variant.asset.name,
+                variant_name=variant.name,
+                region=variant.region,
+                source_currency=rate.source_currency,
+                card_type=variant.card_type.value if variant.card_type else None,
+                face_value=face_value,
+                matched_minimum_face_value=rate.minimum_face_value,
+                matched_maximum_face_value=rate.maximum_face_value,
+                rate_value=rate.rate_value,
+                rate_currency=rate.rate_currency,
+                payout_amount=payout_amount,
+                captured_at=rate.captured_at,
+                last_seen_at=rate.last_seen_at,
+                is_estimate=bool(conditions.get("is_estimate", False)),
+                calculation_basis=conditions.get("calculation_basis"),
             ),
         )

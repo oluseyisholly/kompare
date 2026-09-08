@@ -1,4 +1,5 @@
 from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, func
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 from app.models.enums import UserRole
@@ -18,3 +19,5 @@ class User(TimestampMixin, Base):
     is_active = Column(Boolean, nullable=False, default=True, server_default="true")
     is_verified = Column(Boolean, nullable=False, default=False, server_default="false")
     last_login_at = Column(DateTime(timezone=True), nullable=True)
+
+    refresh_tokens = relationship("RefreshToken", back_populates="user")

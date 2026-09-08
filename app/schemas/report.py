@@ -30,6 +30,7 @@ class LatestRateReportRow(BaseModel):
     spread: Decimal | None
     spread_percent: Decimal | None
     captured_at: datetime
+    last_seen_at: datetime
 
 
 class IngestionHealthReport(BaseModel):
@@ -81,6 +82,7 @@ class ExchangeBuyPreviewReport(BaseModel):
     buy_rate: Decimal
     asset_received: Decimal
     captured_at: datetime
+    last_seen_at: datetime
 
 
 class ExchangeSellPreviewReport(BaseModel):
@@ -92,6 +94,7 @@ class ExchangeSellPreviewReport(BaseModel):
     sell_rate: Decimal
     quote_received: Decimal
     captured_at: datetime
+    last_seen_at: datetime
 
 
 class ExchangeSpreadReport(BaseModel):
@@ -105,6 +108,7 @@ class ExchangeSpreadReport(BaseModel):
     spread: Decimal | None
     spread_percent: Decimal | None
     captured_at: datetime
+    last_seen_at: datetime
 
 
 class QuoteTrendPoint(BaseModel):
@@ -125,3 +129,23 @@ class QuoteTrendReport(BaseModel):
     started_at: datetime
     ended_at: datetime
     points: list[QuoteTrendPoint]
+
+
+class GiftCardSellPreviewReport(BaseModel):
+    provider: str
+    asset_code: str
+    asset_name: str
+    variant_name: str
+    region: str | None
+    source_currency: str | None
+    card_type: str | None
+    face_value: Decimal
+    matched_minimum_face_value: Decimal | None
+    matched_maximum_face_value: Decimal | None
+    rate_value: Decimal
+    rate_currency: str
+    payout_amount: Decimal
+    captured_at: datetime
+    last_seen_at: datetime | None = None
+    is_estimate: bool = False
+    calculation_basis: str | None = None

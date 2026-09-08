@@ -22,4 +22,6 @@ class Provider(TimestampMixin, Base):
 
     fee_profiles = relationship("FeeProfile", back_populates="provider")
     fee_rules = relationship("FeeRule", back_populates="provider")
+    giftcard_variants = relationship("GiftCardVariant", back_populates="provider")
+    giftcard_rates = relationship("GiftCardRate", back_populates="provider")
     ingestion_schedules = relationship("IngestionSchedule", back_populates="provider")

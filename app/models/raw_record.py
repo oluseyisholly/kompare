@@ -21,5 +21,6 @@ class RawRecord(TimestampMixin, Base):
 
     fetch_run = relationship("FetchRun", back_populates="raw_records")
     quotes = relationship("Quote", back_populates="raw_record")
+    giftcard_rates = relationship("GiftCardRate", back_populates="raw_record")
     kyc_profiles = relationship("KycProfile", back_populates="raw_record")
     fee_profiles = relationship("FeeProfile", back_populates="raw_record")

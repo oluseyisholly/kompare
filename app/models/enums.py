@@ -10,6 +10,8 @@ class MarketCategory(str, Enum):
 class ProviderName(str, Enum):
     QUIDAX = "quidax"
     BUSHA = "busha"
+    CARDTONIC = "cardtonic"
+    TBAY = "tbay"
 
 
 class FetchRunStatus(str, Enum):
@@ -57,3 +59,13 @@ class IngestionJobType(str, Enum):
     MARKET_DATA = "market_data"
     KYC = "kyc"
     FEES = "fees"
+
+
+class GiftCardType(str, Enum):
+    ECODE = "ecode"
+    PHYSICAL = "physical"
+    OTHER = "other"
+
+
+class GiftCardRateUnit(str, Enum):
+    PER_FACE_VALUE_UNIT = "per_face_value_unit"

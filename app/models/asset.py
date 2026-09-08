@@ -17,5 +17,6 @@ class Asset(TimestampMixin, Base):
     is_active = Column(Boolean, nullable=False, default=True, server_default="true")
 
     provider_assets = relationship("ProviderAsset", back_populates="asset")
+    giftcard_variants = relationship("GiftCardVariant", back_populates="asset")
     quotes = relationship("Quote", back_populates="asset")
     fee_rules = relationship("FeeRule", back_populates="asset")

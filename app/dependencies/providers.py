@@ -3,24 +3,30 @@ from sqlalchemy.orm import Session
 
 from app.adapters.crypto.busha import BushaAdapter
 from app.adapters.crypto.quidax import QuidaxAdapter
+from app.adapters.giftcard.cardtonic import CardtonicAdapter
+from app.adapters.giftcard.tbay import TbayAdapter
+from app.repositories.tbay_catalog import TbayCatalogRepository
+from app.services.ingestion.tbay import TbayIngestionService
 from app.core.database import get_db
 from app.repositories.asset import AssetRepository
 from app.repositories.fetch_run import FetchRunRepository
+from app.repositories.giftcard_rate import GiftCardRateRepository
+from app.repositories.giftcard_variant import GiftCardVariantRepository
 from app.repositories.ingestion_schedule import IngestionScheduleRepository
 from app.repositories.kyc import KycRepository
-from app.repositories.platform import PlatformRepository
 from app.repositories.provider import ProviderRepository
 from app.repositories.provider_asset import ProviderAssetRepository
 from app.repositories.quote import QuoteRepository
+from app.repositories.refresh_token import RefreshTokenRepository
 from app.repositories.raw_record import RawRecordRepository
 from app.repositories.report import ReportRepository
 from app.repositories.user import UserRepository
 from app.services.auth import AuthService
 from app.services.busha import BushaService
 from app.services.ingestion.busha import BushaIngestionService
+from app.services.ingestion.cardtonic import CardtonicIngestionService
 from app.services.ingestion.focus import FocusAssetSelector
 from app.services.ingestion.quidax import QuidaxIngestionService
-from app.services.platform import PlatformService
 from app.services.provider import ProviderService
 from app.services.quidax import QuidaxService
 from app.services.report import ReportService
@@ -34,16 +40,28 @@ def get_busha_adapter() -> BushaAdapter:
     return BushaAdapter()
 
 
+def get_cardtonic_adapter() -> CardtonicAdapter:
+    return CardtonicAdapter()
+
+
+def build_tbay_ingestion_service(db: Session) -> TbayIngestionService:
+    return TbayIngestionService(
+        adapter=TbayAdapter(),
+        catalog_repository=TbayCatalogRepository(db, GiftCardRateRepository(db)),
+        fetch_run_repository=FetchRunRepository(db),
+    )
+
+
+def get_tbay_ingestion_service(db: Session = Depends(get_db)) -> TbayIngestionService:
+    return build_tbay_ingestion_service(db)
+
+
 def get_focus_asset_selector() -> FocusAssetSelector:
     return FocusAssetSelector()
 
 
 def get_asset_repository(db: Session = Depends(get_db)) -> AssetRepository:
     return AssetRepository(db)
-
-
-def get_platform_repository(db: Session = Depends(get_db)) -> PlatformRepository:
-    return PlatformRepository(db)
 
 
 def get_provider_repository(db: Session = Depends(get_db)) -> ProviderRepository:
@@ -58,12 +76,24 @@ def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
     return UserRepository(db)
 
 
+def get_refresh_token_repository(db: Session = Depends(get_db)) -> RefreshTokenRepository:
+    return RefreshTokenRepository(db)
+
+
 def get_report_repository(db: Session = Depends(get_db)) -> ReportRepository:
     return ReportRepository(db)
 
 
 def get_fetch_run_repository(db: Session = Depends(get_db)) -> FetchRunRepository:
     return FetchRunRepository(db)
+
+
+def get_giftcard_variant_repository(db: Session = Depends(get_db)) -> GiftCardVariantRepository:
+    return GiftCardVariantRepository(db)
+
+
+def get_giftcard_rate_repository(db: Session = Depends(get_db)) -> GiftCardRateRepository:
+    return GiftCardRateRepository(db)
 
 
 def get_raw_record_repository(db: Session = Depends(get_db)) -> RawRecordRepository:
@@ -82,33 +112,37 @@ def get_kyc_repository(db: Session = Depends(get_db)) -> KycRepository:
     return KycRepository(db)
 
 
-def get_platform_service(
-    repository: PlatformRepository = Depends(get_platform_repository),
-    kyc_repository: KycRepository = Depends(get_kyc_repository),
-) -> PlatformService:
-    return PlatformService(repository=repository, kyc_repository=kyc_repository)
-
-
 def get_provider_service(
     repository: ProviderRepository = Depends(get_provider_repository),
     ingestion_schedule_repository: IngestionScheduleRepository = Depends(get_ingestion_schedule_repository),
+    kyc_repository: KycRepository = Depends(get_kyc_repository),
+    giftcard_variant_repository: GiftCardVariantRepository = Depends(get_giftcard_variant_repository),
+    giftcard_rate_repository: GiftCardRateRepository = Depends(get_giftcard_rate_repository),
 ) -> ProviderService:
     return ProviderService(
         repository=repository,
         ingestion_schedule_repository=ingestion_schedule_repository,
+        kyc_repository=kyc_repository,
+        giftcard_variant_repository=giftcard_variant_repository,
+        giftcard_rate_repository=giftcard_rate_repository,
     )
 
 
 def get_auth_service(
     repository: UserRepository = Depends(get_user_repository),
+    refresh_token_repository: RefreshTokenRepository = Depends(get_refresh_token_repository),
 ) -> AuthService:
-    return AuthService(repository=repository)
+    return AuthService(
+        repository=repository,
+        refresh_token_repository=refresh_token_repository,
+    )
 
 
 def get_report_service(
     repository: ReportRepository = Depends(get_report_repository),
+    provider_repository: ProviderRepository = Depends(get_provider_repository),
 ) -> ReportService:
-    return ReportService(repository=repository)
+    return ReportService(repository=repository, provider_repository=provider_repository)
 
 
 def get_quidax_service(
@@ -167,4 +201,28 @@ def get_busha_ingestion_service(
         quote_repository=quote_repository,
         kyc_repository=kyc_repository,
         focus_selector=focus_selector,
+    )
+
+
+def get_cardtonic_ingestion_service(
+    db: Session = Depends(get_db),
+    adapter: CardtonicAdapter = Depends(get_cardtonic_adapter),
+    asset_repository: AssetRepository = Depends(get_asset_repository),
+    provider_repository: ProviderRepository = Depends(get_provider_repository),
+    fetch_run_repository: FetchRunRepository = Depends(get_fetch_run_repository),
+    raw_record_repository: RawRecordRepository = Depends(get_raw_record_repository),
+    giftcard_variant_repository: GiftCardVariantRepository = Depends(get_giftcard_variant_repository),
+    giftcard_rate_repository: GiftCardRateRepository = Depends(get_giftcard_rate_repository),
+    kyc_repository: KycRepository = Depends(get_kyc_repository),
+) -> CardtonicIngestionService:
+    return CardtonicIngestionService(
+        db=db,
+        adapter=adapter,
+        asset_repository=asset_repository,
+        provider_repository=provider_repository,
+        fetch_run_repository=fetch_run_repository,
+        raw_record_repository=raw_record_repository,
+        giftcard_variant_repository=giftcard_variant_repository,
+        giftcard_rate_repository=giftcard_rate_repository,
+        kyc_repository=kyc_repository,
     )

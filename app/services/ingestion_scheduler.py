@@ -8,12 +8,15 @@ from sqlalchemy.orm import Session
 
 from app.adapters.crypto.busha import BushaAdapter
 from app.adapters.crypto.quidax import QuidaxAdapter
+from app.adapters.giftcard.cardtonic import CardtonicAdapter
 from app.core.config import ENABLE_INGESTION_SCHEDULER, INGESTION_SCHEDULER_POLL_SECONDS
 from app.core.database import SessionLocal
 from app.core.logger import logger
 from app.models.enums import IngestionJobType
 from app.repositories.asset import AssetRepository
 from app.repositories.fetch_run import FetchRunRepository
+from app.repositories.giftcard_rate import GiftCardRateRepository
+from app.repositories.giftcard_variant import GiftCardVariantRepository
 from app.repositories.ingestion_schedule import IngestionScheduleRepository
 from app.repositories.kyc import KycRepository
 from app.repositories.provider import ProviderRepository
@@ -21,6 +24,7 @@ from app.repositories.provider_asset import ProviderAssetRepository
 from app.repositories.quote import QuoteRepository
 from app.repositories.raw_record import RawRecordRepository
 from app.services.ingestion.busha import BushaIngestionService
+from app.services.ingestion.cardtonic import CardtonicIngestionService
 from app.services.ingestion.focus import FocusAssetSelector
 from app.services.ingestion.quidax import QuidaxIngestionService
 
@@ -176,6 +180,27 @@ class IngestionSchedulerService:
             await self._execute_job(service=service, job_type=job_type, provider_slug=provider_slug)
             return
 
+        if provider_slug == "cardtonic":
+            service = CardtonicIngestionService(
+                db=db,
+                adapter=CardtonicAdapter(),
+                asset_repository=AssetRepository(db),
+                provider_repository=ProviderRepository(db),
+                fetch_run_repository=FetchRunRepository(db),
+                raw_record_repository=RawRecordRepository(db),
+                giftcard_variant_repository=GiftCardVariantRepository(db),
+                giftcard_rate_repository=GiftCardRateRepository(db),
+                kyc_repository=KycRepository(db),
+            )
+            await self._execute_job(service=service, job_type=job_type, provider_slug=provider_slug)
+            return
+
+        if provider_slug == "tbay":
+            from app.dependencies.providers import build_tbay_ingestion_service
+            service = build_tbay_ingestion_service(db)
+            await self._execute_job(service=service, job_type=job_type, provider_slug=provider_slug)
+            return
+
         logger.warning("No scheduler dispatcher configured for provider=%s", provider_slug)
 
     async def _execute_job(self, *, service: Any, job_type: IngestionJobType, provider_slug: str) -> None:
@@ -183,7 +208,10 @@ class IngestionSchedulerService:
             await service.ingest_market_data()
             return
         if job_type == IngestionJobType.KYC:
-            await service.ingest_kyc()
+            if hasattr(service, "ingest_kyc"):
+                await service.ingest_kyc()
+            else:
+                logger.warning("KYC scheduler is not implemented yet for provider=%s", provider_slug)
             return
         if job_type == IngestionJobType.FEES:
             logger.warning("Fees scheduler is not implemented yet for provider=%s", provider_slug)

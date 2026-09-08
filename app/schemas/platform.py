@@ -32,6 +32,8 @@ class PlatformQuoteRead(BaseModel):
     mid_rate: Decimal | None
     market_price: Decimal | None
     captured_at: datetime
+    last_seen_at: datetime
+    superseded_at: datetime | None
 
 
 class FetchRunRead(BaseModel):

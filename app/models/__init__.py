@@ -3,11 +3,14 @@ from app.core.database import Base
 from .asset import Asset
 from .fee import FeeProfile, FeeRule
 from .fetch_run import FetchRun
+from .giftcard_rate import GiftCardRate
+from .giftcard_variant import GiftCardVariant
 from .ingestion_schedule import IngestionSchedule
 from .kyc import KycLevel, KycProfile
 from .provider import Provider
 from .provider_asset import ProviderAsset
 from .quote import Quote
+from .refresh_token import RefreshToken
 from .raw_record import RawRecord
 from .user import User
 
@@ -17,12 +20,15 @@ __all__ = [
     "FeeProfile",
     "FeeRule",
     "FetchRun",
+    "GiftCardRate",
+    "GiftCardVariant",
     "IngestionSchedule",
     "KycLevel",
     "KycProfile",
     "Provider",
     "ProviderAsset",
     "Quote",
+    "RefreshToken",
     "RawRecord",
     "User",
 ]

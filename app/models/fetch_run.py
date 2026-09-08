@@ -20,5 +20,6 @@ class FetchRun(TimestampMixin, Base):
 
     raw_records = relationship("RawRecord", back_populates="fetch_run")
     quotes = relationship("Quote", back_populates="fetch_run")
+    giftcard_rates = relationship("GiftCardRate", back_populates="fetch_run")
     kyc_profiles = relationship("KycProfile", back_populates="fetch_run")
     fee_profiles = relationship("FeeProfile", back_populates="fetch_run")
