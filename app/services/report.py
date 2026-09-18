@@ -7,7 +7,13 @@ from app.repositories.provider import ProviderRepository
 from app.repositories.report import ReportRepository
 from app.schemas.common import ApiResponse, PaginatedData, build_paginated_response
 from app.schemas.report import (
+    CryptoExchangeBuyPreviewRow,
+    CryptoExchangeSellPreviewRow,
+    CryptoExchangeSpreadRow,
+    CryptoLatestRateReportRow,
+    CryptoQuoteTrendReport,
     ExchangeBuyPreviewReport,
+    ExchangePreviewProvider,
     ExchangeSellPreviewReport,
     ExchangeSpreadReport,
     GiftCardSellPreviewReport,
@@ -127,6 +133,51 @@ class ReportService:
             message="Latest rates retrieved successfully",
         )
 
+    @staticmethod
+    def _exchange_preview_provider(provider) -> ExchangePreviewProvider:
+        return ExchangePreviewProvider(
+            id=provider.id,
+            slug=provider.slug,
+            name=provider.name,
+            description=provider.description,
+            logo_url=provider.logo_url,
+            website_url=provider.website_url,
+            category=provider.category.value,
+        )
+
+    def get_crypto_latest_rates(
+        self,
+        *,
+        page: int,
+        per_page: int,
+    ) -> ApiResponse[PaginatedData[CryptoLatestRateReportRow]]:
+        rows, total = self.repository.get_latest_crypto_rates(page=page, per_page=per_page)
+        items = [
+            CryptoLatestRateReportRow(
+                provider=self._exchange_preview_provider(provider),
+                provider_symbol=quote.provider_asset.provider_symbol if quote.provider_asset else None,
+                asset_code=quote.asset.code,
+                base_currency=quote.base_currency,
+                quote_currency=quote.quote_currency,
+                buy_rate=quote.buy_rate,
+                sell_rate=quote.sell_rate,
+                mid_rate=quote.mid_rate,
+                market_price=quote.market_price,
+                spread=self._compute_spread(quote.buy_rate, quote.sell_rate),
+                spread_percent=self._compute_spread_percent(quote.buy_rate, quote.sell_rate),
+                captured_at=quote.captured_at,
+                last_seen_at=quote.last_seen_at,
+            )
+            for quote, provider in rows
+        ]
+        return build_paginated_response(
+            items=items,
+            page=page,
+            per_page=per_page,
+            total=total,
+            message="Crypto latest rates retrieved successfully",
+        )
+
     def get_ingestion_health(self, provider: str) -> ApiResponse[IngestionHealthReport]:
         provider_enum = self._provider_or_404(provider)
         runs = self.repository.get_runs(provider_enum)
@@ -241,6 +292,43 @@ class ReportService:
             ),
         )
 
+    def get_crypto_exchange_buy_previews(
+        self,
+        *,
+        base_currency: str,
+        quote_currency: str,
+        amount_in_quote: Decimal,
+    ) -> ApiResponse[list[CryptoExchangeBuyPreviewRow]]:
+        rows = self.repository.get_latest_crypto_quotes_for_pair(
+            base_currency=base_currency.upper(),
+            quote_currency=quote_currency.upper(),
+        )
+        items: list[CryptoExchangeBuyPreviewRow] = []
+        seen_providers: set[str] = set()
+        for quote, provider in rows:
+            if provider.slug in seen_providers or quote.buy_rate in (None, Decimal("0")):
+                continue
+            seen_providers.add(provider.slug)
+            items.append(
+                CryptoExchangeBuyPreviewRow(
+                    provider=self._exchange_preview_provider(provider),
+                    provider_symbol=quote.provider_asset.provider_symbol if quote.provider_asset else None,
+                    base_currency=quote.base_currency,
+                    quote_currency=quote.quote_currency,
+                    amount_in_quote=amount_in_quote,
+                    buy_rate=quote.buy_rate,
+                    asset_received=amount_in_quote / quote.buy_rate,
+                    captured_at=quote.captured_at,
+                    last_seen_at=quote.last_seen_at,
+                )
+            )
+
+        return ApiResponse(
+            responseCode=200,
+            message="Crypto exchange buy previews retrieved successfully",
+            data=items,
+        )
+
     def get_exchange_sell_preview(
         self,
         provider: str,
@@ -278,6 +366,43 @@ class ReportService:
             ),
         )
 
+    def get_crypto_exchange_sell_previews(
+        self,
+        *,
+        base_currency: str,
+        quote_currency: str,
+        amount_in_base: Decimal,
+    ) -> ApiResponse[list[CryptoExchangeSellPreviewRow]]:
+        rows = self.repository.get_latest_crypto_quotes_for_pair(
+            base_currency=base_currency.upper(),
+            quote_currency=quote_currency.upper(),
+        )
+        items: list[CryptoExchangeSellPreviewRow] = []
+        seen_providers: set[str] = set()
+        for quote, provider in rows:
+            if provider.slug in seen_providers or quote.sell_rate is None:
+                continue
+            seen_providers.add(provider.slug)
+            items.append(
+                CryptoExchangeSellPreviewRow(
+                    provider=self._exchange_preview_provider(provider),
+                    provider_symbol=quote.provider_asset.provider_symbol if quote.provider_asset else None,
+                    base_currency=quote.base_currency,
+                    quote_currency=quote.quote_currency,
+                    amount_in_base=amount_in_base,
+                    sell_rate=quote.sell_rate,
+                    quote_received=amount_in_base * quote.sell_rate,
+                    captured_at=quote.captured_at,
+                    last_seen_at=quote.last_seen_at,
+                )
+            )
+
+        return ApiResponse(
+            responseCode=200,
+            message="Crypto exchange sell previews retrieved successfully",
+            data=items,
+        )
+
     def get_exchange_spread(
         self,
         provider: str,
@@ -313,6 +438,44 @@ class ReportService:
                 captured_at=quote.captured_at,
                 last_seen_at=quote.last_seen_at,
             ),
+        )
+
+    def get_crypto_exchange_spreads(
+        self,
+        *,
+        base_currency: str,
+        quote_currency: str,
+    ) -> ApiResponse[list[CryptoExchangeSpreadRow]]:
+        rows = self.repository.get_latest_crypto_quotes_for_pair(
+            base_currency=base_currency.upper(),
+            quote_currency=quote_currency.upper(),
+        )
+        items: list[CryptoExchangeSpreadRow] = []
+        seen_providers: set[str] = set()
+        for quote, provider in rows:
+            if provider.slug in seen_providers:
+                continue
+            seen_providers.add(provider.slug)
+            items.append(
+                CryptoExchangeSpreadRow(
+                    provider=self._exchange_preview_provider(provider),
+                    provider_symbol=quote.provider_asset.provider_symbol if quote.provider_asset else None,
+                    base_currency=quote.base_currency,
+                    quote_currency=quote.quote_currency,
+                    buy_rate=quote.buy_rate,
+                    sell_rate=quote.sell_rate,
+                    mid_rate=quote.mid_rate,
+                    spread=self._compute_spread(quote.buy_rate, quote.sell_rate),
+                    spread_percent=self._compute_spread_percent(quote.buy_rate, quote.sell_rate),
+                    captured_at=quote.captured_at,
+                    last_seen_at=quote.last_seen_at,
+                )
+            )
+
+        return ApiResponse(
+            responseCode=200,
+            message="Crypto exchange spreads retrieved successfully",
+            data=items,
         )
 
     def get_quote_trend(
@@ -369,6 +532,64 @@ class ReportService:
                     for row, observed_at in rows
                 ],
             ),
+        )
+
+    def get_crypto_quote_trends(
+        self,
+        *,
+        base_currency: str,
+        quote_currency: str,
+        period: str,
+    ) -> ApiResponse[list[CryptoQuoteTrendReport]]:
+        duration = self._resolve_period(period)
+        ended_at = datetime.now(UTC)
+        started_at = ended_at - duration
+        rows = self.repository.get_crypto_quote_trends_for_pair(
+            base_currency=base_currency.upper(),
+            quote_currency=quote_currency.upper(),
+            started_at=started_at,
+            ended_at=ended_at,
+        )
+
+        grouped: dict[str, dict] = {}
+        for quote, provider, observed_at in rows:
+            group = grouped.setdefault(
+                provider.slug,
+                {
+                    "provider": provider,
+                    "provider_symbol": quote.provider_asset.provider_symbol if quote.provider_asset else None,
+                    "points": [],
+                },
+            )
+            group["provider_symbol"] = quote.provider_asset.provider_symbol if quote.provider_asset else group["provider_symbol"]
+            group["points"].append(
+                QuoteTrendPoint(
+                    captured_at=observed_at,
+                    buy_rate=quote.buy_rate,
+                    sell_rate=quote.sell_rate,
+                    mid_rate=quote.mid_rate,
+                    market_price=quote.market_price,
+                )
+            )
+
+        items = [
+            CryptoQuoteTrendReport(
+                provider=self._exchange_preview_provider(group["provider"]),
+                provider_symbol=group["provider_symbol"],
+                base_currency=base_currency.upper(),
+                quote_currency=quote_currency.upper(),
+                period=period.lower(),
+                points_count=len(group["points"]),
+                started_at=started_at,
+                ended_at=ended_at,
+                points=group["points"],
+            )
+            for group in grouped.values()
+        ]
+        return ApiResponse(
+            responseCode=200,
+            message="Crypto quote trends retrieved successfully",
+            data=items,
         )
 
     def get_giftcard_sell_preview(

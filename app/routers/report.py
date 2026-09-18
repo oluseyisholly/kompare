@@ -2,6 +2,11 @@ from fastapi import APIRouter, Depends, Query
 from app.dependencies import get_report_service
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.report import (
+    CryptoExchangeBuyPreviewRow,
+    CryptoExchangeSellPreviewRow,
+    CryptoExchangeSpreadRow,
+    CryptoLatestRateReportRow,
+    CryptoQuoteTrendReport,
     ExchangeBuyPreviewReport,
     ExchangeSellPreviewReport,
     ExchangeSpreadReport,
@@ -34,6 +39,15 @@ def get_crypto_latest_rates(
     service: ReportService = Depends(get_report_service),
 ) -> ApiResponse[PaginatedData[LatestRateReportRow]]:
     return service.get_latest_rates(provider, page=page, per_page=per_page)
+
+
+@router.get("/providers/crypto/latest-rates", response_model=ApiResponse[PaginatedData[CryptoLatestRateReportRow]])
+def get_all_crypto_latest_rates(
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=20, ge=1, le=100),
+    service: ReportService = Depends(get_report_service),
+) -> ApiResponse[PaginatedData[CryptoLatestRateReportRow]]:
+    return service.get_crypto_latest_rates(page=page, per_page=per_page)
 
 
 @router.get("/providers/{provider}/ingestion-health", response_model=ApiResponse[IngestionHealthReport])
@@ -78,6 +92,22 @@ def get_crypto_exchange_buy_preview(
     )
 
 
+@router.get("/providers/crypto/exchange/buy-preview", response_model=ApiResponse[list[CryptoExchangeBuyPreviewRow]])
+def get_crypto_exchange_buy_previews(
+    base_currency: str = Query(..., min_length=1),
+    quote_currency: str = Query(..., min_length=1),
+    amount_in_quote: float = Query(..., gt=0),
+    service: ReportService = Depends(get_report_service),
+) -> ApiResponse[list[CryptoExchangeBuyPreviewRow]]:
+    from decimal import Decimal
+
+    return service.get_crypto_exchange_buy_previews(
+        base_currency=base_currency,
+        quote_currency=quote_currency,
+        amount_in_quote=Decimal(str(amount_in_quote)),
+    )
+
+
 @router.get("/providers/{provider}/crypto/exchange/sell-preview", response_model=ApiResponse[ExchangeSellPreviewReport])
 def get_crypto_exchange_sell_preview(
     provider: str,
@@ -90,6 +120,22 @@ def get_crypto_exchange_sell_preview(
 
     return service.get_exchange_sell_preview(
         provider,
+        base_currency=base_currency,
+        quote_currency=quote_currency,
+        amount_in_base=Decimal(str(amount_in_base)),
+    )
+
+
+@router.get("/providers/crypto/exchange/sell-preview", response_model=ApiResponse[list[CryptoExchangeSellPreviewRow]])
+def get_crypto_exchange_sell_previews(
+    base_currency: str = Query(..., min_length=1),
+    quote_currency: str = Query(..., min_length=1),
+    amount_in_base: float = Query(..., gt=0),
+    service: ReportService = Depends(get_report_service),
+) -> ApiResponse[list[CryptoExchangeSellPreviewRow]]:
+    from decimal import Decimal
+
+    return service.get_crypto_exchange_sell_previews(
         base_currency=base_currency,
         quote_currency=quote_currency,
         amount_in_base=Decimal(str(amount_in_base)),
@@ -110,6 +156,18 @@ def get_crypto_exchange_spread(
     )
 
 
+@router.get("/providers/crypto/exchange/spread", response_model=ApiResponse[list[CryptoExchangeSpreadRow]])
+def get_crypto_exchange_spreads(
+    base_currency: str = Query(..., min_length=1),
+    quote_currency: str = Query(..., min_length=1),
+    service: ReportService = Depends(get_report_service),
+) -> ApiResponse[list[CryptoExchangeSpreadRow]]:
+    return service.get_crypto_exchange_spreads(
+        base_currency=base_currency,
+        quote_currency=quote_currency,
+    )
+
+
 @router.get("/providers/{provider}/crypto/quotes/trend", response_model=ApiResponse[QuoteTrendReport])
 def get_crypto_quote_trend(
     provider: str,
@@ -120,6 +178,20 @@ def get_crypto_quote_trend(
 ) -> ApiResponse[QuoteTrendReport]:
     return service.get_quote_trend(
         provider,
+        base_currency=base_currency,
+        quote_currency=quote_currency,
+        period=period,
+    )
+
+
+@router.get("/providers/crypto/quotes/trend", response_model=ApiResponse[list[CryptoQuoteTrendReport]])
+def get_crypto_quote_trends(
+    base_currency: str = Query(..., min_length=1),
+    quote_currency: str = Query(..., min_length=1),
+    period: str = Query(..., pattern="^(24h|7d|30d|90d)$"),
+    service: ReportService = Depends(get_report_service),
+) -> ApiResponse[list[CryptoQuoteTrendReport]]:
+    return service.get_crypto_quote_trends(
         base_currency=base_currency,
         quote_currency=quote_currency,
         period=period,

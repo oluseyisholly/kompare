@@ -1,15 +1,16 @@
 from datetime import datetime
 
-from sqlalchemy import func
+from sqlalchemy import String, cast, func
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.asset import Asset
-from app.models.enums import ProviderName
+from app.models.enums import MarketCategory, ProviderName
 from app.models.fetch_run import FetchRun
 from app.models.giftcard_rate import GiftCardRate
 from app.models.giftcard_variant import GiftCardVariant
 from app.models.kyc import KycProfile
 from app.models.provider_asset import ProviderAsset
+from app.models.provider import Provider
 from app.models.quote import Quote, QuoteObservation
 from app.models.raw_record import RawRecord
 from app.repositories.pagination import paginate_query
@@ -54,6 +55,20 @@ class ReportRepository:
         )
         return paginate_query(query, page=page, per_page=per_page)
 
+    def get_latest_crypto_rates(self, *, page: int, per_page: int) -> tuple[list[tuple[Quote, Provider]], int]:
+        query = (
+            self.db.query(Quote, Provider)
+            .join(Provider, Provider.slug == func.lower(cast(Quote.provider, String)))
+            .options(joinedload(Quote.asset), joinedload(Quote.provider_asset))
+            .filter(
+                Provider.category == MarketCategory.CRYPTO,
+                Provider.is_active.is_(True),
+                Quote.superseded_at.is_(None),
+            )
+            .order_by(Provider.name.asc(), Quote.captured_at.desc(), Quote.id.desc())
+        )
+        return paginate_query(query, page=page, per_page=per_page)
+
     def get_latest_quote_for_pair(
         self,
         provider: ProviderName,
@@ -72,6 +87,27 @@ class ReportRepository:
             )
             .order_by(Quote.captured_at.desc(), Quote.id.desc())
             .first()
+        )
+
+    def get_latest_crypto_quotes_for_pair(
+        self,
+        *,
+        base_currency: str,
+        quote_currency: str,
+    ) -> list[tuple[Quote, Provider]]:
+        return (
+            self.db.query(Quote, Provider)
+            .join(Provider, Provider.slug == func.lower(cast(Quote.provider, String)))
+            .options(joinedload(Quote.asset), joinedload(Quote.provider_asset))
+            .filter(
+                Provider.category == MarketCategory.CRYPTO,
+                Provider.is_active.is_(True),
+                Quote.base_currency == base_currency,
+                Quote.quote_currency == quote_currency,
+                Quote.superseded_at.is_(None),
+            )
+            .order_by(Provider.name.asc(), Quote.captured_at.desc(), Quote.id.desc())
+            .all()
         )
 
     def get_quote_trend(
@@ -95,6 +131,31 @@ class ReportRepository:
                 QuoteObservation.observed_at <= ended_at,
             )
             .order_by(QuoteObservation.observed_at.asc(), QuoteObservation.id.asc())
+            .all()
+        )
+
+    def get_crypto_quote_trends_for_pair(
+        self,
+        *,
+        base_currency: str,
+        quote_currency: str,
+        started_at: datetime,
+        ended_at: datetime,
+    ) -> list[tuple[Quote, Provider, datetime]]:
+        return (
+            self.db.query(Quote, Provider, QuoteObservation.observed_at)
+            .join(QuoteObservation, QuoteObservation.quote_id == Quote.id)
+            .join(Provider, Provider.slug == func.lower(cast(Quote.provider, String)))
+            .options(joinedload(Quote.provider_asset))
+            .filter(
+                Provider.category == MarketCategory.CRYPTO,
+                Provider.is_active.is_(True),
+                Quote.base_currency == base_currency,
+                Quote.quote_currency == quote_currency,
+                QuoteObservation.observed_at >= started_at,
+                QuoteObservation.observed_at <= ended_at,
+            )
+            .order_by(Provider.name.asc(), QuoteObservation.observed_at.asc(), QuoteObservation.id.asc())
             .all()
         )
 
