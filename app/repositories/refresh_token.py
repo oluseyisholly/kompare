@@ -11,9 +11,11 @@ class RefreshTokenRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def create(self, refresh_token: RefreshToken) -> RefreshToken:
+    def create(self, refresh_token: RefreshToken, *, commit: bool = True) -> RefreshToken:
         self.db.add(refresh_token)
-        self.db.commit()
+        self.db.flush()
+        if commit:
+            self.db.commit()
         self.db.refresh(refresh_token)
         return refresh_token
 
@@ -35,3 +37,31 @@ class RefreshTokenRepository:
         self.db.commit()
         self.db.refresh(refresh_token)
         return refresh_token
+
+    def consume(self, *, token_id, token_hash, user_id, now):
+        # Conditional UPDATE admits one consumer even across separate workers.
+        return (
+            self.db.query(RefreshToken)
+            .filter(
+                RefreshToken.token_id == token_id,
+                RefreshToken.user_id == user_id,
+                RefreshToken.token_hash == token_hash,
+                RefreshToken.is_active.is_(True),
+                RefreshToken.revoked_at.is_(None),
+                RefreshToken.expires_at > now,
+            )
+            .update(
+                {RefreshToken.is_active: False, RefreshToken.revoked_at: now},
+                synchronize_session=False,
+            )
+            == 1
+        )
+
+    def revoke_all_for_user_without_commit(self, user_id: int) -> None:
+        self.db.query(RefreshToken).filter(
+            RefreshToken.user_id == user_id,
+            RefreshToken.is_active.is_(True),
+        ).update(
+            {RefreshToken.is_active: False, RefreshToken.revoked_at: datetime.now(UTC)},
+            synchronize_session=False,
+        )

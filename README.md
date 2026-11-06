@@ -1,6 +1,6 @@
 # Kompare
 
-A production-ready FastAPI starter template with PostgreSQL, Docker integration, and modern Python tooling.
+Kompare backend for provider comparisons, stored exchange rates, gift cards and mutual funds.
 
 ---
 
@@ -62,6 +62,17 @@ POSTGRES_PORT=5432
 ```
 
 You can also use the provided `.env.example` as a template.
+
+Set `SECRET_KEY` in your `.env` to a private, randomly generated value before
+starting the app. Generate one with:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+API startup fails if the key is missing, blank, or set to a known development
+placeholder (`change-me` or `kompare-dev-secret`). Standalone ingestion commands do not
+require this authentication key. Keep the key out of version control.
 
 ---
 
@@ -128,7 +139,7 @@ make migrate msg="add users table"
 make exec-migration
 ```
 
-Migrations are automatically applied when starting the app with `make up`.
+Apply migrations once as a release step before starting API/worker replicas. App startup does not apply migrations. See [production hardening and release steps](docs/production-readiness.md).
 
 ---
 
@@ -247,3 +258,44 @@ Dev dependencies:
 ## 📝 License
 
 This template is open source and available for use in your projects.
+
+## Shared FX data
+
+Provider-keyed FX APIs, normalized models and network-free local conversion are documented in
+[the shared FX architecture](docs/fx-architecture.md). Wise collection details are in
+[the Wise integration guide](docs/wise-fx-integration.md), including configuration,
+API examples, migration and verification results. Frontend calculations use `POST /fx/convert`;
+the live quote endpoint is an admin diagnostic. Wise credentials are optional at startup.
+
+Flutterwave transfer-rate sampling uses the same provider-keyed APIs and ingestion
+dispatcher. See [the Flutterwave guide](docs/flutterwave-fx-integration.md) for test/live
+configuration, destination-amount scenarios and local estimates before fees.
+
+Fincra FX ingestion and local estimates: see [integration guide](docs/fincra-fx-integration.md).
+
+`POST /fx/convert` uses the same four inputs for Wise, Flutterwave and Fincra:
+`provider`, `source_currency`, `target_currency`, `source_amount`. Legacy `rate_side`
+is rejected with 422. Fincra temporarily assumes provider-side buying/selling of
+the base currency, priced in quote per base units: direct BUY, otherwise reciprocal
+reversed SELL. Responses disclose this assumption pending provider confirmation.
+No database migration/configuration is needed for this policy change. See the
+[unified conversion contract](docs/fx-architecture.md#unified-conversion-contract).
+
+
+## Production hardening
+
+Read [production hardening and release steps](docs/production-readiness.md) before
+rollout. Rotate previously committed credentials, apply the new migration explicitly,
+provision an administrator securely, and start the durable ingestion worker alongside
+the API. No default administrator is created. `.env` is private and untracked.
+
+```sh
+uv sync --locked --group dev
+python -m alembic -c app/alembic.ini upgrade head
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+# Separate terminal/process; required for API-triggered and scheduled ingestion:
+python -m app.scripts.run_ingestion_worker
+```
+
+Direct provider ingestion commands remain available. Public liveness/readiness
+probes are `/health/live` and `/health/ready`; raw diagnostics require an admin.

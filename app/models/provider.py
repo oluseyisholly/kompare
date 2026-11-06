@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Enum, Integer, JSON, String, Text
+from sqlalchemy import JSON, Boolean, Column, Enum, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -25,3 +25,5 @@ class Provider(TimestampMixin, Base):
     giftcard_variants = relationship("GiftCardVariant", back_populates="provider")
     giftcard_rates = relationship("GiftCardRate", back_populates="provider")
     ingestion_schedules = relationship("IngestionSchedule", back_populates="provider")
+    reviews = relationship("ProviderReview", back_populates="provider")
+    metrics = relationship("ProviderMetric", back_populates="provider", uselist=False)

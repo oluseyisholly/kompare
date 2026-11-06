@@ -31,12 +31,15 @@ def _error_response(
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def handle_app_error(_: Request, exc: AppError) -> JSONResponse:
-        return _error_response(
+        response = _error_response(
             status_code=exc.status_code,
             message=exc.message,
             error_code=exc.error_code,
             data=exc.data,
         )
+        if exc.status_code == 429 and exc.data.get("retry_after"):
+            response.headers["Retry-After"] = str(exc.data["retry_after"])
+        return response
 
     @app.exception_handler(HTTPException)
     async def handle_http_exception(_: Request, exc: HTTPException) -> JSONResponse:
@@ -56,7 +59,12 @@ def register_exception_handlers(app: FastAPI) -> None:
             status_code=422,
             message="Validation failed",
             error_code="validation_error",
-            data={"details": exc.errors()},
+            data={
+                "details": [
+                    {key: error[key] for key in ("loc", "type", "msg") if key in error}
+                    for error in exc.errors()
+                ]
+            },
         )
 
     @app.exception_handler(Exception)

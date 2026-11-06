@@ -23,7 +23,9 @@ class ProviderRepository:
     def list_all(self) -> list[Provider]:
         return self.db.query(Provider).order_by(Provider.name.asc(), Provider.id.asc()).all()
 
-    def get_assets(self, provider: ProviderName, *, page: int, per_page: int) -> tuple[list[ProviderAsset], int]:
+    def get_assets(
+        self, provider: ProviderName, *, page: int, per_page: int
+    ) -> tuple[list[ProviderAsset], int]:
         query = (
             self.db.query(ProviderAsset)
             .options(joinedload(ProviderAsset.asset))
@@ -32,7 +34,9 @@ class ProviderRepository:
         )
         return paginate_query(query, page=page, per_page=per_page)
 
-    def get_quotes(self, provider: ProviderName, *, page: int, per_page: int) -> tuple[list[Quote], int]:
+    def get_quotes(
+        self, provider: ProviderName, *, page: int, per_page: int
+    ) -> tuple[list[Quote], int]:
         query = (
             self.db.query(Quote)
             .options(joinedload(Quote.asset), joinedload(Quote.provider_asset))
@@ -41,7 +45,9 @@ class ProviderRepository:
         )
         return paginate_query(query, page=page, per_page=per_page)
 
-    def get_fetch_runs(self, provider: ProviderName, *, page: int, per_page: int) -> tuple[list[FetchRun], int]:
+    def get_fetch_runs(
+        self, provider: ProviderName, *, page: int, per_page: int
+    ) -> tuple[list[FetchRun], int]:
         query = (
             self.db.query(FetchRun)
             .filter(FetchRun.provider == provider)
@@ -49,7 +55,9 @@ class ProviderRepository:
         )
         return paginate_query(query, page=page, per_page=per_page)
 
-    def get_raw_records(self, provider: ProviderName, *, page: int, per_page: int) -> tuple[list[RawRecord], int]:
+    def get_raw_records(
+        self, provider: ProviderName, *, page: int, per_page: int
+    ) -> tuple[list[RawRecord], int]:
         query = (
             self.db.query(RawRecord)
             .filter(RawRecord.provider == provider)
@@ -57,7 +65,9 @@ class ProviderRepository:
         )
         return paginate_query(query, page=page, per_page=per_page)
 
-    def get_kyc_profiles(self, provider: ProviderName, *, page: int, per_page: int) -> tuple[list[KycProfile], int]:
+    def get_kyc_profiles(
+        self, provider: ProviderName, *, page: int, per_page: int
+    ) -> tuple[list[KycProfile], int]:
         query = (
             self.db.query(KycProfile)
             .options(joinedload(KycProfile.levels))

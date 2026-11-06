@@ -38,7 +38,9 @@ def build_pagination(*, page: int, per_page: int, total: int) -> PaginationMeta:
     )
 
 
-def build_paginated_data(*, items: list[T], page: int, per_page: int, total: int) -> PaginatedData[T]:
+def build_paginated_data(
+    *, items: list[T], page: int, per_page: int, total: int
+) -> PaginatedData[T]:
     return PaginatedData(
         items=items,
         pagination=build_pagination(page=page, per_page=per_page, total=total),

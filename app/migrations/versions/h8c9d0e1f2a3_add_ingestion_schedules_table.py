@@ -5,12 +5,12 @@ Revises: g7b8c9d0e1f2
 Create Date: 2026-08-31 17:20:00.000000
 
 """
+
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
-
 
 # revision identifiers, used by Alembic.
 revision: str = "h8c9d0e1f2a3"
@@ -43,15 +43,34 @@ def upgrade() -> None:
         sa.Column("last_run_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("notes", sa.String(), nullable=True),
         sa.Column("metadata_json", sa.JSON(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(["provider_id"], ["providers.id"]),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("provider_id", "job_type", name="uq_ingestion_schedules_provider_job_type"),
+        sa.UniqueConstraint(
+            "provider_id", "job_type", name="uq_ingestion_schedules_provider_job_type"
+        ),
     )
     op.create_index(op.f("ix_ingestion_schedules_id"), "ingestion_schedules", ["id"], unique=False)
-    op.create_index(op.f("ix_ingestion_schedules_provider_id"), "ingestion_schedules", ["provider_id"], unique=False)
-    op.create_index(op.f("ix_ingestion_schedules_job_type"), "ingestion_schedules", ["job_type"], unique=False)
+    op.create_index(
+        op.f("ix_ingestion_schedules_provider_id"),
+        "ingestion_schedules",
+        ["provider_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_ingestion_schedules_job_type"), "ingestion_schedules", ["job_type"], unique=False
+    )
 
 
 def downgrade() -> None:

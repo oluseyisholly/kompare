@@ -6,8 +6,8 @@ from decimal import Decimal, InvalidOperation
 
 import httpx
 
-from app.models.enums import ProviderName
 from app.core.logger import logger
+from app.models.enums import ProviderName
 
 
 def number(value, *, positive=False):
@@ -27,27 +27,45 @@ def normalize_offer(category, offer, points_rate):
     maximum = number(offer.get("maxTrade"), positive=True)
     if minimum > maximum:
         raise ValueError("Invalid Tbay amount range")
-    denominations = [str(number(v, positive=True)) for v in (offer.get("fixTrade") or "").split("||") if v]
+    denominations = [
+        str(number(v, positive=True)) for v in (offer.get("fixTrade") or "").split("||") if v
+    ]
     tags = offer.get("tagList") or []
     if not isinstance(tags, list) or any(not isinstance(x, str) for x in tags):
         raise ValueError("Invalid Tbay offer tags")
     multiples = re.search(r"multiples of\s+(\d+)", " ".join(tags), re.I)
     step = str(number(multiples.group(1), positive=True)) if multiples else "1"
-    brand = re.sub(r"\s+gift\s*card$", "", str(category.get("nameSimple") or category.get("name") or ""), flags=re.I).strip()
+    brand = re.sub(
+        r"\s+gift\s*card$",
+        "",
+        str(category.get("nameSimple") or category.get("name") or ""),
+        flags=re.I,
+    ).strip()
     code = re.sub(r"[^A-Z0-9]+", "_", brand.upper().replace("&", "AND")).strip("_")
     if not code:
         raise ValueError("Tbay card brand is missing")
     rate = number(offer.get("discount"), positive=True) * points_rate
     return {
-        "asset_code": code, "brand": brand, "external_id": offer["code"],
-        "name": f'{brand} {offer["tradeCurrency"]} ({minimum}-{maximum}) — {offer["code"]}',
-        "source_currency": offer["tradeCurrency"], "minimum": minimum, "maximum": maximum,
-        "rate": rate, "active": str(offer.get("status")) == "1",
+        "asset_code": code,
+        "brand": brand,
+        "external_id": offer["code"],
+        "name": f"{brand} {offer['tradeCurrency']} ({minimum}-{maximum}) — {offer['code']}",
+        "source_currency": offer["tradeCurrency"],
+        "minimum": minimum,
+        "maximum": maximum,
+        "rate": rate,
+        "active": str(offer.get("status")) == "1",
         "terms": offer.get("explain"),
-        "conditions": {"seller_id": offer.get("userId"), "allowed_denominations": denominations,
-                       "amount_step": step, "whole_units_only": True, "tags": tags,
-                       "terms": offer.get("explain"), "calculation_basis": "public_discount_times_points_ngn",
-                       "is_estimate": True},
+        "conditions": {
+            "seller_id": offer.get("userId"),
+            "allowed_denominations": denominations,
+            "amount_step": step,
+            "whole_units_only": True,
+            "tags": tags,
+            "terms": offer.get("explain"),
+            "calculation_basis": "public_discount_times_points_ngn",
+            "is_estimate": True,
+        },
     }
 
 
@@ -62,15 +80,29 @@ class TbayIngestionService:
 
     async def ingest(self):
         run = self.fetch_run_repository.create_pending(ProviderName.TBAY)
-        result = {"fetch_run_id": run.id, "categories_processed": 0, "scopes_completed": 0,
-                  "variants_processed": 0, "rates_created": 0, "raw_records_created": 0,
-                  "failed_scopes": []}
+        result = {
+            "fetch_run_id": run.id,
+            "categories_processed": 0,
+            "scopes_completed": 0,
+            "variants_processed": 0,
+            "rates_created": 0,
+            "raw_records_created": 0,
+            "failed_scopes": [],
+        }
         last_error = None
 
         def failed(category_id, currency, exc):
-            result["failed_scopes"].append({"category_id": category_id, "currency": currency,
-                                           "error": str(exc), "details": getattr(exc, "data", {})})
-            logger.warning("Tbay scope failed category=%s currency=%s: %s", category_id, currency, exc)
+            result["failed_scopes"].append(
+                {
+                    "category_id": category_id,
+                    "currency": currency,
+                    "error": str(exc),
+                    "details": getattr(exc, "data", {}),
+                }
+            )
+            logger.warning(
+                "Tbay scope failed category=%s currency=%s: %s", category_id, currency, exc
+            )
 
         try:
             async with httpx.AsyncClient() as client:
@@ -101,13 +133,26 @@ class TbayIngestionService:
                             continue
                         seen.add(symbol)
                         try:
-                            offers = await self.adapter.fetch_offers(category_id, symbol, client=client)
-                            batch = {"category": category, "currency": symbol, "offers": offers,
-                                     "captured_at": datetime.now(UTC),
-                                     "normalized": [normalize_offer(category, row, points) for row in offers]}
+                            offers = await self.adapter.fetch_offers(
+                                category_id, symbol, client=client
+                            )
+                            batch = {
+                                "category": category,
+                                "currency": symbol,
+                                "offers": offers,
+                                "captured_at": datetime.now(UTC),
+                                "normalized": [
+                                    normalize_offer(category, row, points) for row in offers
+                                ],
+                            }
                             saved = self.catalog_repository.persist(
-                                run=run, categories=[category], batches=[batch], points_payload=points_payload,
-                                source_url=self.adapter.source_url("806206"), finalize=False)
+                                run=run,
+                                categories=[category],
+                                batches=[batch],
+                                points_payload=points_payload,
+                                source_url=self.adapter.source_url("806206"),
+                                finalize=False,
+                            )
                         except Exception as exc:
                             last_error = exc
                             failed(category_id, symbol, exc)
@@ -115,7 +160,12 @@ class TbayIngestionService:
                         result["scopes_completed"] += 1
                         for key in ("variants_processed", "rates_created", "raw_records_created"):
                             result[key] += saved[key]
-                        logger.info("Tbay scope saved category=%s currency=%s offers=%s", category_id, symbol, len(offers))
+                        logger.info(
+                            "Tbay scope saved category=%s currency=%s offers=%s",
+                            category_id,
+                            symbol,
+                            len(offers),
+                        )
             run.metadata_json = result.copy()
             run.records_fetched = result["variants_processed"]
             if not result["scopes_completed"]:
@@ -125,13 +175,19 @@ class TbayIngestionService:
                 # partially completed run as a fully successful ingestion.
                 result["status"] = "partial"
                 run.metadata_json = result.copy()
-                self.fetch_run_repository.mark_failed(run, error_message=(
-                    f'Partial ingestion: {result["scopes_completed"]} scopes saved, '
-                    f'{len(result["failed_scopes"])} failed; see metadata_json'))
+                self.fetch_run_repository.mark_failed(
+                    run,
+                    error_message=(
+                        f"Partial ingestion: {result['scopes_completed']} scopes saved, "
+                        f"{len(result['failed_scopes'])} failed; see metadata_json"
+                    ),
+                )
             else:
                 result["status"] = "success"
                 run.metadata_json = result.copy()
-                self.fetch_run_repository.mark_success(run, records_fetched=result["variants_processed"])
+                self.fetch_run_repository.mark_success(
+                    run, records_fetched=result["variants_processed"]
+                )
             return result
         except Exception as exc:
             result["status"] = "failed"

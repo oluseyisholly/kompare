@@ -7,7 +7,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-import app.models
 from app.core.database import Base
 from app.models.asset import Asset
 from app.models.enums import MarketCategory, ProviderName, QuoteType
@@ -33,15 +32,24 @@ class QuoteHistoryTests(unittest.TestCase):
         self.engine.dispose()
 
     def quote(self, rate="100", provider=ProviderName.QUIDAX, metadata=None):
-        return Quote(provider=provider, asset_id=self.asset_id, quote_type=QuoteType.SPOT,
-                     base_currency="BTC", quote_currency="NGN", buy_rate=Decimal(rate),
-                     captured_at=self.now, metadata_json=metadata)
+        return Quote(
+            provider=provider,
+            asset_id=self.asset_id,
+            quote_type=QuoteType.SPOT,
+            base_currency="BTC",
+            quote_currency="NGN",
+            buy_rate=Decimal(rate),
+            captured_at=self.now,
+            metadata_json=metadata,
+        )
 
     def test_unchanged_then_changed_and_provider_isolation(self):
         self.assertEqual(self.repo.create_many([self.quote()]), 1)
         first = self.db.query(Quote).one()
         captured = first.captured_at
-        self.assertEqual(self.repo.create_many([self.quote("100.000000001", metadata={"volume": "999"})]), 0)
+        self.assertEqual(
+            self.repo.create_many([self.quote("100.000000001", metadata={"volume": "999"})]), 0
+        )
         self.assertEqual(first.captured_at, captured)
         self.assertEqual(self.db.query(QuoteObservation).count(), 2)
         self.assertEqual(self.repo.create_many([self.quote("101")]), 1)
@@ -52,6 +60,14 @@ class QuoteHistoryTests(unittest.TestCase):
     def test_changed_limits_create_version(self):
         self.repo.create_many([self.quote(metadata={"min_buy_amount": "10"})])
         self.assertEqual(self.repo.create_many([self.quote(metadata={"min_buy_amount": "20"})]), 1)
+
+    def test_observation_metadata_is_part_of_identity_without_explicit_opt_in(self):
+        self.repo.create_many([self.quote(metadata={"feed_timestamp": "old", "source_url": "a"})])
+        created = self.repo.create_many(
+            [self.quote(metadata={"feed_timestamp": "new", "source_url": "b"})]
+        )
+        self.assertEqual(created, 1)
+        self.assertEqual(self.db.query(Quote).count(), 2)
 
     def test_failed_batch_rolls_back_freshness_and_version(self):
         self.repo.create_many([self.quote()])
@@ -70,8 +86,12 @@ class QuoteHistoryTests(unittest.TestCase):
             clock.now.return_value = self.now + timedelta(hours=3)
             self.repo.create_many([self.quote()])
         rows = ReportRepository(self.db).get_quote_trend(
-            ProviderName.QUIDAX, base_currency="BTC", quote_currency="NGN",
-            started_at=self.now + timedelta(hours=1), ended_at=self.now + timedelta(hours=4))
+            ProviderName.QUIDAX,
+            base_currency="BTC",
+            quote_currency="NGN",
+            started_at=self.now + timedelta(hours=1),
+            ended_at=self.now + timedelta(hours=4),
+        )
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0][0].buy_rate, Decimal("100"))
 

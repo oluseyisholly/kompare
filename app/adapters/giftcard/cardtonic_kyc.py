@@ -1,4 +1,5 @@
 """Parse Cardtonic's article without inventing limits absent from the source."""
+
 import re
 from datetime import datetime
 
@@ -36,9 +37,15 @@ def parse_kyc_article(soup: BeautifulSoup) -> dict:
                 notes.append(text)
         if not requirements:
             raise ValueError(f"No requirements found for Cardtonic {name}")
-        levels.append({"level_name": name, "description": "\n".join(content),
-                       "requirements": requirements, "notes": "\n".join(notes),
-                       "metadata_json": {"limits_published": False}})
+        levels.append(
+            {
+                "level_name": name,
+                "description": "\n".join(content),
+                "requirements": requirements,
+                "notes": "\n".join(notes),
+                "metadata_json": {"limits_published": False},
+            }
+        )
     if {level["level_name"].lower() for level in levels} != {"basic kyc", "advanced kyc"}:
         raise ValueError("Expected Basic and Advanced Cardtonic KYC sections")
     timestamp = soup.select_one("time[datetime]")
@@ -48,5 +55,9 @@ def parse_kyc_article(soup: BeautifulSoup) -> dict:
             updated_at = datetime.fromisoformat(timestamp["datetime"].replace("Z", "+00:00"))
         except ValueError:
             pass
-    return {"title": title.get_text(" ", strip=True), "updated_at": updated_at,
-            "content": article.get_text("\n", strip=True), "levels": levels}
+    return {
+        "title": title.get_text(" ", strip=True),
+        "updated_at": updated_at,
+        "content": article.get_text("\n", strip=True),
+        "levels": levels,
+    }

@@ -33,6 +33,32 @@ class LatestRateReportRow(BaseModel):
     last_seen_at: datetime
 
 
+class ExchangePreviewProvider(BaseModel):
+    id: int
+    slug: str
+    name: str
+    description: str | None = None
+    logo_url: str | None = None
+    website_url: str | None = None
+    category: str
+
+
+class CryptoLatestRateReportRow(BaseModel):
+    provider: ExchangePreviewProvider
+    provider_symbol: str | None
+    asset_code: str
+    base_currency: str
+    quote_currency: str
+    buy_rate: Decimal | None
+    sell_rate: Decimal | None
+    mid_rate: Decimal | None
+    market_price: Decimal | None
+    spread: Decimal | None
+    spread_percent: Decimal | None
+    captured_at: datetime
+    last_seen_at: datetime
+
+
 class IngestionHealthReport(BaseModel):
     provider: str
     total_runs: int
@@ -85,8 +111,32 @@ class ExchangeBuyPreviewReport(BaseModel):
     last_seen_at: datetime
 
 
+class CryptoExchangeBuyPreviewRow(BaseModel):
+    provider: ExchangePreviewProvider
+    provider_symbol: str | None
+    base_currency: str
+    quote_currency: str
+    amount_in_quote: Decimal
+    buy_rate: Decimal
+    asset_received: Decimal
+    captured_at: datetime
+    last_seen_at: datetime
+
+
 class ExchangeSellPreviewReport(BaseModel):
     provider: str
+    provider_symbol: str | None
+    base_currency: str
+    quote_currency: str
+    amount_in_base: Decimal
+    sell_rate: Decimal
+    quote_received: Decimal
+    captured_at: datetime
+    last_seen_at: datetime
+
+
+class CryptoExchangeSellPreviewRow(BaseModel):
+    provider: ExchangePreviewProvider
     provider_symbol: str | None
     base_currency: str
     quote_currency: str
@@ -111,6 +161,20 @@ class ExchangeSpreadReport(BaseModel):
     last_seen_at: datetime
 
 
+class CryptoExchangeSpreadRow(BaseModel):
+    provider: ExchangePreviewProvider
+    provider_symbol: str | None
+    base_currency: str
+    quote_currency: str
+    buy_rate: Decimal | None
+    sell_rate: Decimal | None
+    mid_rate: Decimal | None
+    spread: Decimal | None
+    spread_percent: Decimal | None
+    captured_at: datetime
+    last_seen_at: datetime
+
+
 class QuoteTrendPoint(BaseModel):
     captured_at: datetime
     buy_rate: Decimal | None
@@ -121,6 +185,18 @@ class QuoteTrendPoint(BaseModel):
 
 class QuoteTrendReport(BaseModel):
     provider: str
+    provider_symbol: str | None
+    base_currency: str
+    quote_currency: str
+    period: str
+    points_count: int
+    started_at: datetime
+    ended_at: datetime
+    points: list[QuoteTrendPoint]
+
+
+class CryptoQuoteTrendReport(BaseModel):
+    provider: ExchangePreviewProvider
     provider_symbol: str | None
     base_currency: str
     quote_currency: str

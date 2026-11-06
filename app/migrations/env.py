@@ -14,8 +14,8 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(PROJECT_ROOT))
 
-from app.core.database import Base, SQLALCHEMY_DATABASE_URL
 import app.models  # noqa: F401
+from app.core.database import SQLALCHEMY_DATABASE_URL, Base
 
 # Alembic Config object
 config = context.config
@@ -26,6 +26,7 @@ if config.config_file_name is not None:
 
 # Set target metadata for Alembic migrations
 target_metadata = Base.metadata
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode (no DB connection)."""

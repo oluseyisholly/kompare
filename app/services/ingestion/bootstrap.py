@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 
 import httpx
@@ -14,7 +13,6 @@ from app.models.enums import MarketCategory, ProviderName
 from app.repositories.asset import AssetRepository
 from app.repositories.provider_asset import ProviderAssetRepository
 from app.services.ingestion.focus import FocusAssetSelector
-
 
 FOCUS_ASSET_NAMES: dict[str, str] = {
     "BTC": "Bitcoin",
@@ -31,8 +29,6 @@ FOCUS_ASSET_NAMES: dict[str, str] = {
     "BNB": "BNB",
     "DOGE": "Dogecoin",
 }
-
-_bootstrap_tasks: set[asyncio.Task[None]] = set()
 
 
 class BootstrapIngestionService:
@@ -76,7 +72,9 @@ class BootstrapIngestionService:
                 quidax_markets = await self.quidax_adapter.fetch_markets(client=client)
                 return {
                     "assets_seeded": assets_seeded,
-                    "quidax_provider_assets_synced": self.sync_quidax_provider_assets(quidax_markets),
+                    "quidax_provider_assets_synced": self.sync_quidax_provider_assets(
+                        quidax_markets
+                    ),
                     "busha_provider_assets_synced": 0,
                 }
 
@@ -202,11 +200,15 @@ async def run_bootstrap_job(provider_slug: str | None = None) -> None:
         logger.info("Bootstrap ingestion completed for all providers result=%s", result)
     except Exception:
         logger.exception("Bootstrap ingestion failed for provider=%s", provider_slug or "all")
+        raise
     finally:
         db.close()
 
 
-def launch_bootstrap_job(provider_slug: str | None = None) -> None:
-    task = asyncio.create_task(run_bootstrap_job(provider_slug))
-    _bootstrap_tasks.add(task)
-    task.add_done_callback(_bootstrap_tasks.discard)
+def launch_bootstrap_job(provider_slug=None, *, db=None):
+    from app.repositories.ingestion_job import IngestionJobRepository
+
+    if db is None:
+        with SessionLocal() as session:
+            return launch_bootstrap_job(provider_slug, db=session)
+    return IngestionJobRepository(db).enqueue(provider_slug=provider_slug, job_type="bootstrap")

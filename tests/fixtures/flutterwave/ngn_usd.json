@@ -1,0 +1,9 @@
+{
+  "status": "success",
+  "message": "Transfer rates fetched",
+  "data": {
+    "rate": 0.000694329,
+    "source": {"currency": "NGN", "amount": 1440239.425},
+    "destination": {"currency": "USD", "amount": 1000}
+  }
+}

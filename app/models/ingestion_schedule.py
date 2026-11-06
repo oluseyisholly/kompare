@@ -1,4 +1,14 @@
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, JSON, String, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -9,7 +19,9 @@ from app.models.mixins import TimestampMixin
 class IngestionSchedule(TimestampMixin, Base):
     __tablename__ = "ingestion_schedules"
     __table_args__ = (
-        UniqueConstraint("provider_id", "job_type", name="uq_ingestion_schedules_provider_job_type"),
+        UniqueConstraint(
+            "provider_id", "job_type", name="uq_ingestion_schedules_provider_job_type"
+        ),
     )
 
     id = Column(Integer, primary_key=True, index=True)

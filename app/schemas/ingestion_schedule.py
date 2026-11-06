@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class IngestionScheduleRead(BaseModel):
@@ -21,6 +21,19 @@ class IngestionScheduleRead(BaseModel):
 
 
 class IngestionScheduleUpsert(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "interval_minutes": 60,
+                    "is_enabled": False,
+                    "next_run_at": None,
+                    "notes": "Hourly refresh; enable when ready to schedule ingestion.",
+                }
+            ]
+        }
+    )
+
     interval_minutes: int = Field(..., ge=1)
     is_enabled: bool = True
     next_run_at: datetime | None = None

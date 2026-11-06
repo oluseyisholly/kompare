@@ -95,6 +95,19 @@ class KycProfileRead(BaseModel):
 
 
 class KycLevelCreate(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "level_name": "Basic",
+                    "rank": 1,
+                    "requirements": ["Email verification"],
+                    "notes": "Example only; use the provider's published requirements.",
+                }
+            ]
+        }
+    )
+
     level_name: str
     rank: int
     description: str | None = None
@@ -111,6 +124,26 @@ class KycLevelCreate(BaseModel):
 
 
 class KycProfileCreate(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "title": "Provider verification requirements",
+                    "source_url": "https://example.com/verification-requirements",
+                    "source_updated_at": None,
+                    "levels": [
+                        {
+                            "level_name": "Basic",
+                            "rank": 1,
+                            "requirements": ["Email verification"],
+                            "notes": "Example only; use the provider's published requirements.",
+                        }
+                    ],
+                }
+            ]
+        }
+    )
+
     title: str
     source_url: str
     source_updated_at: datetime | None = None

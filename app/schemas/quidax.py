@@ -10,4 +10,3 @@ class QuidaxMarketRead(BaseModel):
     quote_unit: str
     trading_rules: dict[str, Any]
     filters: dict[str, Any]
-

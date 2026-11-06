@@ -9,13 +9,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
+from app.adapters.crypto.quidax import QuidaxAdapter
 from app.core.database import SessionLocal
 from app.repositories.fetch_run import FetchRunRepository
 from app.repositories.kyc import KycRepository
 from app.repositories.provider_asset import ProviderAssetRepository
 from app.repositories.quote import QuoteRepository
 from app.repositories.raw_record import RawRecordRepository
-from app.adapters.crypto.quidax import QuidaxAdapter
 from app.services.ingestion import QuidaxIngestionService
 
 

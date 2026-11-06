@@ -1,4 +1,4 @@
-DOCKER_COMPOSE := $(shell which docker-compose)
+DOCKER_COMPOSE := docker compose
 DOCKER := $(shell which docker)
 
 # Start development
@@ -31,15 +31,15 @@ pull:
 
 # Run unit tests locally
 test:
-	$(DOCKER_COMPOSE) run --rm app bash -c "python -m pytest -vvs"
+	$(DOCKER_COMPOSE) --profile test run --build --rm test
 
 # Run code linter and formatter (Ruff)
 lint:
-	$(DOCKER_COMPOSE) run --rm app ruff check --fix .
+	uv run --locked ruff check app tests
 
 # Format code only (Ruff)
 format:
-	$(DOCKER_COMPOSE) run --rm app ruff format .
+	uv run --locked ruff format app tests
 
 # Access to container bash
 bash:
@@ -47,12 +47,12 @@ bash:
 
 # Initialize Alembic migrations folder (only needed once)
 init-migrations:
-	$(DOCKER_COMPOSE) run --rm app alembic init migrations
+	$(DOCKER_COMPOSE) run --rm app python -m alembic -c app/alembic.ini init migrations
 
 # Generate migration file
 migrate:
-	$(DOCKER_COMPOSE) run --rm app alembic revision --autogenerate -m "$(msg)"
+	$(DOCKER_COMPOSE) run --rm app python -m alembic -c app/alembic.ini revision --autogenerate -m "$(msg)"
 
 # Execute last migration file
 exec-migration:
-	$(DOCKER_COMPOSE) run --rm app alembic upgrade head
+	$(DOCKER_COMPOSE) run --rm app python -m alembic -c app/alembic.ini upgrade head

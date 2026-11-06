@@ -15,9 +15,9 @@ from app.repositories.asset import AssetRepository
 from app.repositories.fetch_run import FetchRunRepository
 from app.repositories.giftcard_rate import GiftCardRateRepository
 from app.repositories.giftcard_variant import GiftCardVariantRepository
+from app.repositories.kyc import KycRepository
 from app.repositories.provider import ProviderRepository
 from app.repositories.raw_record import RawRecordRepository
-from app.repositories.kyc import KycRepository
 from app.services.ingestion.cardtonic import CardtonicIngestionService
 
 
@@ -35,7 +35,11 @@ async def run(include_top_cards: bool, kyc_only: bool = False) -> None:
             giftcard_rate_repository=GiftCardRateRepository(db),
             kyc_repository=KycRepository(db),
         )
-        result = await service.ingest_kyc() if kyc_only else await service.ingest(include_top_cards=include_top_cards)
+        result = (
+            await service.ingest_kyc()
+            if kyc_only
+            else await service.ingest(include_top_cards=include_top_cards)
+        )
         print(result)
     finally:
         db.close()
@@ -43,7 +47,9 @@ async def run(include_top_cards: bool, kyc_only: bool = False) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run Cardtonic gift card ingestion.")
-    parser.add_argument("--kyc-only", action="store_true", help="Fetch only Cardtonic KYC requirements.")
+    parser.add_argument(
+        "--kyc-only", action="store_true", help="Fetch only Cardtonic KYC requirements."
+    )
     parser.add_argument(
         "--skip-top-cards",
         action="store_true",

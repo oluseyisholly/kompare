@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 
 from sqlalchemy.orm import Session
 
@@ -13,35 +13,43 @@ class QuoteRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def create_many(self, quotes: list[Quote]) -> int:
+    def create_many(
+        self, quotes: list[Quote], *, observation_metadata_keys: frozenset[str] = frozenset()
+    ) -> int:
         if not quotes:
             return 0
         created = 0
         try:
             # Lock existing parent rows even when a pair has no quote yet. Stable
             # ordering avoids deadlocks between concurrent ingestion batches.
-            self.db.query(Asset).filter(
-                Asset.id.in_({q.asset_id for q in quotes})
-            ).order_by(Asset.id).with_for_update().all()
+            self.db.query(Asset).filter(Asset.id.in_({q.asset_id for q in quotes})).order_by(
+                Asset.id
+            ).with_for_update().all()
             observed_at = datetime.now(UTC)
             for incoming in quotes:
-                for field in ("buy_rate", "sell_rate", "mid_rate", "market_price"):
-                    value = getattr(incoming, field)
-                    if value is not None:
-                        value = Decimal(str(value))
-                        if not value.is_finite() or value < 0:
-                            raise ValueError(f"Invalid quote {field}")
-                        setattr(incoming, field, value.quantize(Decimal("0.00000001"), rounding=ROUND_HALF_UP))
-                current = self.db.query(Quote).filter(
-                    Quote.provider == incoming.provider,
-                    Quote.asset_id == incoming.asset_id,
-                    Quote.base_currency == incoming.base_currency,
-                    Quote.quote_currency == incoming.quote_currency,
-                    Quote.quote_type == incoming.quote_type,
-                    Quote.superseded_at.is_(None),
-                ).first()
-                if current is not None and self._same_offer(current, incoming):
+                self.validate_quote(incoming)
+                current = (
+                    self.db.query(Quote)
+                    .filter(
+                        Quote.provider == incoming.provider,
+                        Quote.asset_id == incoming.asset_id,
+                        Quote.base_currency == incoming.base_currency,
+                        Quote.quote_currency == incoming.quote_currency,
+                        Quote.quote_type == incoming.quote_type,
+                        Quote.superseded_at.is_(None),
+                    )
+                    .first()
+                )
+                if current is not None and self._same_offer(
+                    current, incoming, observation_metadata_keys=observation_metadata_keys
+                ):
                     current.last_seen_at = observed_at
+                    if observation_metadata_keys:
+                        # Refresh observation context and its provenance together while
+                        # retaining this price version's ID and original captured_at.
+                        current.metadata_json = incoming.metadata_json
+                        current.raw_record_id = incoming.raw_record_id
+                        current.fetch_run_id = incoming.fetch_run_id
                     selected = current
                 else:
                     if current is not None:
@@ -52,10 +60,14 @@ class QuoteRepository:
                     self.db.flush()
                     selected = incoming
                     created += 1
-                self.db.add(QuoteObservation(
-                    quote_id=selected.id, fetch_run_id=incoming.fetch_run_id,
-                    raw_record_id=incoming.raw_record_id, observed_at=observed_at,
-                ))
+                self.db.add(
+                    QuoteObservation(
+                        quote_id=selected.id,
+                        fetch_run_id=incoming.fetch_run_id,
+                        raw_record_id=incoming.raw_record_id,
+                        observed_at=observed_at,
+                    )
+                )
                 self.db.flush()
             self.db.commit()
             return created
@@ -64,10 +76,43 @@ class QuoteRepository:
             raise
 
     @staticmethod
-    def _same_offer(current: Quote, incoming: Quote) -> bool:
+    def _same_offer(
+        current: Quote,
+        incoming: Quote,
+        *,
+        observation_metadata_keys: frozenset[str] = frozenset(),
+    ) -> bool:
         fields = ("buy_rate", "sell_rate", "mid_rate", "market_price", "provider_asset_id")
         # Rolling market statistics stay in raw records, not in the offer identity.
-        ignored = {"high", "low", "open", "volume", "percentage_change"}
+        ignored = {"high", "low", "open", "volume", "percentage_change"} | observation_metadata_keys
+
         def conditions(quote):
             return {k: v for k, v in (quote.metadata_json or {}).items() if k not in ignored}
-        return all(getattr(current, f) == getattr(incoming, f) for f in fields) and conditions(current) == conditions(incoming)
+
+        return all(getattr(current, f) == getattr(incoming, f) for f in fields) and conditions(
+            current
+        ) == conditions(incoming)
+
+    @staticmethod
+    def validate_quote(quote):
+        present = False
+        for field in ("buy_rate", "sell_rate", "mid_rate", "market_price"):
+            value = getattr(quote, field)
+            if value is None:
+                continue
+            value = Decimal(str(value))
+            if not value.is_finite() or value <= 0:
+                raise ValueError(f"Invalid quote {field}")
+            rounded = value.quantize(Decimal("0.00000001"), rounding=ROUND_HALF_UP)
+            if rounded <= 0:
+                metadata = quote.metadata_json or {}
+                exact_key = {
+                    "reference_rate": "provider_rate",
+                    "treasury_rate": "provider_price",
+                }.get(metadata.get("classification"))
+                if exact_key is None or Decimal(str(metadata.get(exact_key, "0"))) <= 0:
+                    raise ValueError(f"Quote {field} is below stored precision")
+            setattr(quote, field, rounded)
+            present = True
+        if not present:
+            raise ValueError("Quote contains no usable price")

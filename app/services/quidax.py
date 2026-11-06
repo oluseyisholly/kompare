@@ -7,7 +7,9 @@ class QuidaxService:
     def __init__(self, adapter: QuidaxAdapter) -> None:
         self.adapter = adapter
 
-    async def get_markets(self, *, page: int, per_page: int) -> ApiResponse[PaginatedData[QuidaxMarketRead]]:
+    async def get_markets(
+        self, *, page: int, per_page: int
+    ) -> ApiResponse[PaginatedData[QuidaxMarketRead]]:
         payload = await self.adapter.fetch_markets()
         markets = payload.get("data", [])
         total = len(markets)

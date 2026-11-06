@@ -3,6 +3,7 @@ services:
     container_name: kompare_app
     build:
       context: .
+      target: production
     command: ["/app/start.sh"]
     ports:
       - "8000:8000"
@@ -10,3 +11,23 @@ services:
       - .env
     environment:
       PORT: 8000
+
+  worker:
+    profiles: ["ingestion"]
+    build:
+      context: .
+      target: production
+    command: ["python", "-m", "app.scripts.run_ingestion_worker"]
+    env_file: [.env]
+    healthcheck:
+      disable: true
+    stop_grace_period: 2m
+
+  test:
+    profiles: ["test"]
+    build:
+      context: .
+      target: test
+    environment:
+      SECRET_KEY: disposable-test-signing-key-only-not-used-outside-tests
+      ENABLE_INGESTION_SCHEDULER: "false"

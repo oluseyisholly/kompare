@@ -5,12 +5,12 @@ Revises: d4e5f6a7b8c9
 Create Date: 2026-08-31 12:45:00.000000
 
 """
+
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
-
 
 # revision identifiers, used by Alembic.
 revision: str = "e5f6a7b8c9d0"
@@ -48,8 +48,18 @@ def upgrade() -> None:
         sa.Column("is_active", sa.Boolean(), server_default="true", nullable=False),
         sa.Column("is_verified", sa.Boolean(), server_default="false", nullable=False),
         sa.Column("last_login_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_users_id"), "users", ["id"], unique=False)

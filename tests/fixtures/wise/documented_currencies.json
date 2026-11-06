@@ -1,0 +1,4 @@
+[
+  {"code":"AUD","symbol":"A$","name":"Australian dollar","countryKeywords":["AUD","AU","Australia","aus"],"supportsDecimals":true},
+  {"code":"JPY","symbol":"¥","name":"Japanese yen","countryKeywords":["JPY","JP","Japan","jpn"],"supportsDecimals":false}
+]

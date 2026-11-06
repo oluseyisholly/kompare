@@ -10,15 +10,21 @@ from sqlalchemy.orm import Session
 
 from app.adapters.giftcard.cardtonic import CardtonicAdapter
 from app.core.logger import logger
-from app.models.enums import GiftCardRateUnit, GiftCardType, MarketCategory, ProviderName, RawSourceType
+from app.models.enums import (
+    GiftCardRateUnit,
+    GiftCardType,
+    MarketCategory,
+    ProviderName,
+    RawSourceType,
+)
 from app.models.giftcard_rate import GiftCardRate
 from app.repositories.asset import AssetRepository
 from app.repositories.fetch_run import FetchRunRepository
 from app.repositories.giftcard_rate import GiftCardRateRepository
 from app.repositories.giftcard_variant import GiftCardVariantRepository
+from app.repositories.kyc import KycRepository
 from app.repositories.provider import ProviderRepository
 from app.repositories.raw_record import RawRecordRepository
-from app.repositories.kyc import KycRepository
 
 
 class CardtonicIngestionService:
@@ -51,13 +57,19 @@ class CardtonicIngestionService:
             async with httpx.AsyncClient() as client:
                 document = await self.adapter.fetch_kyc_document(client=client)
             raw = self.raw_record_repository.create(
-                provider=ProviderName.CARDTONIC, fetch_run_id=run.id,
-                source_type=RawSourceType.HTML, source_url=self.adapter.kyc_url,
-                payload=document, raw_text=document["content"],
+                provider=ProviderName.CARDTONIC,
+                fetch_run_id=run.id,
+                source_type=RawSourceType.HTML,
+                source_url=self.adapter.kyc_url,
+                payload=document,
+                raw_text=document["content"],
             )
             count = self.kyc_repository.create_profile_with_levels(
-                provider=ProviderName.CARDTONIC, source_url=self.adapter.kyc_url,
-                fetch_run=run, raw_record=raw, kyc_document=document,
+                provider=ProviderName.CARDTONIC,
+                source_url=self.adapter.kyc_url,
+                fetch_run=run,
+                raw_record=raw,
+                kyc_document=document,
             )
             self.fetch_run_repository.mark_success(run, records_fetched=count)
             return {"fetch_run_id": run.id, "kyc_levels_created": count}
@@ -125,7 +137,9 @@ class CardtonicIngestionService:
                     if not category_id:
                         continue
 
-                    subcategories_payload = await self.adapter.fetch_subcategories(category_id, client=client)
+                    subcategories_payload = await self.adapter.fetch_subcategories(
+                        category_id, client=client
+                    )
                     subcategories_raw = self.raw_record_repository.create(
                         provider=ProviderName.CARDTONIC,
                         fetch_run_id=fetch_run.id,
@@ -221,7 +235,10 @@ class CardtonicIngestionService:
 
             rate_value = self._resolve_ngn_rate(subcategory)
             if rate_value is None:
-                logger.warning("Skipping Cardtonic rate for variant=%s because NGN rate is missing", variant.name)
+                logger.warning(
+                    "Skipping Cardtonic rate for variant=%s because NGN rate is missing",
+                    variant.name,
+                )
                 continue
 
             rates.append(
@@ -390,7 +407,9 @@ class CardtonicIngestionService:
             return GiftCardType.PHYSICAL
         return GiftCardType.OTHER
 
-    def _resolve_face_value_range(self, subcategory: dict[str, Any]) -> tuple[Decimal | None, Decimal | None]:
+    def _resolve_face_value_range(
+        self, subcategory: dict[str, Any]
+    ) -> tuple[Decimal | None, Decimal | None]:
         name = str(subcategory.get("name") or "")
         minimum = self._to_decimal(subcategory.get("minimumAcceptableAmount"))
         maximum = None

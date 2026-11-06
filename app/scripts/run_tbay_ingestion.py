@@ -1,4 +1,5 @@
 """Run with python3 -m app.scripts.run_tbay_ingestion."""
+
 import asyncio
 
 from app.core.database import SessionLocal

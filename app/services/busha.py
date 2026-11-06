@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from app.adapters.crypto.busha import BushaAdapter
 from app.schemas.busha import BushaPairRead
 from app.schemas.common import ApiResponse, PaginatedData, build_pagination
 from app.services.ingestion.focus import FocusAssetSelector
-from app.adapters.crypto.busha import BushaAdapter
 
 
 class BushaService:
@@ -15,7 +15,9 @@ class BushaService:
         self.adapter = adapter
         self.focus_selector = focus_selector or FocusAssetSelector()
 
-    async def get_pairs(self, *, page: int, per_page: int) -> ApiResponse[PaginatedData[BushaPairRead]]:
+    async def get_pairs(
+        self, *, page: int, per_page: int
+    ) -> ApiResponse[PaginatedData[BushaPairRead]]:
         payload = await self.adapter.fetch_pairs()
         pairs = [
             pair

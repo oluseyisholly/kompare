@@ -49,6 +49,8 @@ class BushaIngestionService:
     async def ingest(self, *, include_kyc: bool = True) -> dict[str, int]:
         fetch_run = self.fetch_run_repository.create_pending(ProviderName.BUSHA)
 
+        failures = []
+
         try:
             async with httpx.AsyncClient() as client:
                 pairs_payload = await self.adapter.fetch_pairs(client=client)
@@ -65,12 +67,15 @@ class BushaIngestionService:
             )
 
             filtered_pairs = self._filtered_pairs(pairs_payload)
-            assets_by_code = self.asset_repository.get_by_codes(pair["base"] for pair in filtered_pairs)
+            assets_by_code = self.asset_repository.get_by_codes(
+                pair["base"] for pair in filtered_pairs
+            )
             quotes_created = self._persist_pairs(
                 pairs=filtered_pairs,
                 assets_by_code=assets_by_code,
                 fetch_run=fetch_run,
                 raw_record=pairs_raw,
+                failures=failures,
             )
 
             kyc_levels_created = 0
@@ -91,15 +96,25 @@ class BushaIngestionService:
                     kyc_document=kyc_document,
                 )
 
-            self.fetch_run_repository.mark_success(
-                fetch_run,
-                records_fetched=len(filtered_pairs),
-            )
+            fetch_run.metadata_json = {"extraction_failures": failures}
+            if failures:
+                fetch_run.records_fetched = max(0, len(filtered_pairs) - len(failures))
+                self.fetch_run_repository.mark_failed(
+                    fetch_run, error_message="Partial price extraction; see metadata"
+                )
+            else:
+                self.fetch_run_repository.mark_success(
+                    fetch_run, records_fetched=len(filtered_pairs)
+                )
 
             return {
                 "fetch_run_id": fetch_run.id,
                 "pairs_processed": len(filtered_pairs),
                 "quotes_created": quotes_created,
+                "extraction_failures": failures,
+                "status": ("partial" if len(filtered_pairs) > len(failures) else "failed")
+                if failures
+                else "success",
                 "kyc_levels_created": kyc_levels_created,
             }
         except Exception as exc:
@@ -167,8 +182,10 @@ class BushaIngestionService:
         assets_by_code: dict[str, Any],
         fetch_run: FetchRun,
         raw_record: RawRecord,
+        failures=None,
     ) -> int:
         quotes: list[Quote] = []
+        failures = [] if failures is None else failures
 
         for pair in pairs:
             base_code = str(pair.get("base", "")).upper()
@@ -199,12 +216,12 @@ class BushaIngestionService:
                 },
             )
 
-            buy_rate = self._to_decimal((pair.get("buy_price") or {}).get("amount"))
-            sell_rate = self._to_decimal((pair.get("sell_price") or {}).get("amount"))
-            mid_rate = self._midpoint(buy_rate, sell_rate)
+            try:
+                buy_rate = self._to_decimal((pair.get("buy_price") or {}).get("amount"))
+                sell_rate = self._to_decimal((pair.get("sell_price") or {}).get("amount"))
+                mid_rate = self._midpoint(buy_rate, sell_rate)
 
-            quotes.append(
-                Quote(
+                quote = Quote(
                     provider=ProviderName.BUSHA,
                     asset_id=asset.id,
                     provider_asset_id=provider_asset.id,
@@ -231,8 +248,18 @@ class BushaIngestionService:
                         "percentage_change": pair.get("percentage_change"),
                     },
                 )
-            )
+                QuoteRepository.validate_quote(quote)
+                quotes.append(quote)
+            except (ValueError, TypeError, ArithmeticError, AttributeError):
+                failures.append(
+                    {
+                        "record": base_code,
+                        "error": "Invalid or missing provider price; current data preserved",
+                    }
+                )
 
+        if not quotes and not failures:
+            failures.append({"error": "No usable provider prices; current data preserved"})
         return self.quote_repository.create_many(quotes)
 
     def _midpoint(self, buy: Decimal | None, sell: Decimal | None) -> Decimal | None:

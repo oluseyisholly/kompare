@@ -88,10 +88,12 @@ class BushaAdapter:
             "title": title,
             "updated_at": self._parse_support_datetime(updated_text),
             "content": "\n\n".join(
-                part for part in [
+                part
+                for part in [
                     self._clean_text(identity_article),
                     self._clean_text(limits_article),
-                ] if part
+                ]
+                if part
             ),
             "levels": levels,
             "metadata_json": {
@@ -176,8 +178,12 @@ class BushaAdapter:
                     "exchange_limit_period": period,
                     "fiat_deposit_limit": deposit_limit,
                     "fiat_withdrawal_limit": withdrawal_limit,
-                    "crypto_deposit_limit": "Unlimited" if "unlimited crypto" in deposit_limit.lower() else None,
-                    "crypto_withdrawal_limit": "None" if "no crypto" in withdrawal_limit.lower() else None,
+                    "crypto_deposit_limit": "Unlimited"
+                    if "unlimited crypto" in deposit_limit.lower()
+                    else None,
+                    "crypto_withdrawal_limit": "None"
+                    if "no crypto" in withdrawal_limit.lower()
+                    else None,
                     "notes": None,
                     "metadata_json": {"source": "limits_page"},
                 }

@@ -1,13 +1,19 @@
 from datetime import UTC, datetime, timedelta
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 
 from app.core.exceptions import BadRequestError, ConflictError, NotFoundError
-from app.models.enums import FetchRunStatus, GiftCardType, ProviderName
+from app.models.enums import GiftCardType, ProviderName
 from app.repositories.provider import ProviderRepository
 from app.repositories.report import ReportRepository
 from app.schemas.common import ApiResponse, PaginatedData, build_paginated_response
 from app.schemas.report import (
+    CryptoExchangeBuyPreviewRow,
+    CryptoExchangeSellPreviewRow,
+    CryptoExchangeSpreadRow,
+    CryptoLatestRateReportRow,
+    CryptoQuoteTrendReport,
     ExchangeBuyPreviewReport,
+    ExchangePreviewProvider,
     ExchangeSellPreviewReport,
     ExchangeSpreadReport,
     GiftCardSellPreviewReport,
@@ -23,7 +29,9 @@ from app.schemas.report import (
 
 
 class ReportService:
-    def __init__(self, repository: ReportRepository, provider_repository: ProviderRepository) -> None:
+    def __init__(
+        self, repository: ReportRepository, provider_repository: ProviderRepository
+    ) -> None:
         self.repository = repository
         self.provider_repository = provider_repository
 
@@ -43,7 +51,9 @@ class ReportService:
         return sell_rate - buy_rate
 
     @staticmethod
-    def _compute_spread_percent(buy_rate: Decimal | None, sell_rate: Decimal | None) -> Decimal | None:
+    def _compute_spread_percent(
+        buy_rate: Decimal | None, sell_rate: Decimal | None
+    ) -> Decimal | None:
         if buy_rate in (None, Decimal("0")) or sell_rate is None:
             return None
         return ((sell_rate - buy_rate) / buy_rate) * Decimal("100")
@@ -94,12 +104,18 @@ class ReportService:
                 latest_kyc_at=self.repository.get_latest_kyc_at(provider_enum),
                 latest_fetch_run_id=latest_fetch_run.id if latest_fetch_run else None,
                 latest_fetch_run_status=latest_fetch_run.status.value if latest_fetch_run else None,
-                latest_fetch_run_started_at=latest_fetch_run.started_at if latest_fetch_run else None,
-                latest_fetch_run_finished_at=latest_fetch_run.finished_at if latest_fetch_run else None,
+                latest_fetch_run_started_at=latest_fetch_run.started_at
+                if latest_fetch_run
+                else None,
+                latest_fetch_run_finished_at=latest_fetch_run.finished_at
+                if latest_fetch_run
+                else None,
             ),
         )
 
-    def get_latest_rates(self, provider: str, *, page: int, per_page: int) -> ApiResponse[PaginatedData[LatestRateReportRow]]:
+    def get_latest_rates(
+        self, provider: str, *, page: int, per_page: int
+    ) -> ApiResponse[PaginatedData[LatestRateReportRow]]:
         provider_enum = self._provider_or_404(provider)
         rows, total = self.repository.get_latest_rates(provider_enum, page=page, per_page=per_page)
         items = [
@@ -127,25 +143,60 @@ class ReportService:
             message="Latest rates retrieved successfully",
         )
 
+    @staticmethod
+    def _exchange_preview_provider(provider) -> ExchangePreviewProvider:
+        return ExchangePreviewProvider(
+            id=provider.id,
+            slug=provider.slug,
+            name=provider.name,
+            description=provider.description,
+            logo_url=provider.logo_url,
+            website_url=provider.website_url,
+            category=provider.category.value,
+        )
+
+    def get_crypto_latest_rates(
+        self,
+        *,
+        page: int,
+        per_page: int,
+    ) -> ApiResponse[PaginatedData[CryptoLatestRateReportRow]]:
+        rows, total = self.repository.get_latest_crypto_rates(page=page, per_page=per_page)
+        items = [
+            CryptoLatestRateReportRow(
+                provider=self._exchange_preview_provider(provider),
+                provider_symbol=quote.provider_asset.provider_symbol
+                if quote.provider_asset
+                else None,
+                asset_code=quote.asset.code,
+                base_currency=quote.base_currency,
+                quote_currency=quote.quote_currency,
+                buy_rate=quote.buy_rate,
+                sell_rate=quote.sell_rate,
+                mid_rate=quote.mid_rate,
+                market_price=quote.market_price,
+                spread=self._compute_spread(quote.buy_rate, quote.sell_rate),
+                spread_percent=self._compute_spread_percent(quote.buy_rate, quote.sell_rate),
+                captured_at=quote.captured_at,
+                last_seen_at=quote.last_seen_at,
+            )
+            for quote, provider in rows
+        ]
+        return build_paginated_response(
+            items=items,
+            page=page,
+            per_page=per_page,
+            total=total,
+            message="Crypto latest rates retrieved successfully",
+        )
+
     def get_ingestion_health(self, provider: str) -> ApiResponse[IngestionHealthReport]:
         provider_enum = self._provider_or_404(provider)
-        runs = self.repository.get_runs(provider_enum)
-        latest_run = runs[0] if runs else None
-        last_success = next((run for run in runs if run.status == FetchRunStatus.SUCCESS), None)
-        last_failed = next((run for run in runs if run.status == FetchRunStatus.FAILED), None)
         return ApiResponse(
             responseCode=200,
             message="Ingestion health retrieved successfully",
             data=IngestionHealthReport(
-                provider=provider_enum.value,
-                total_runs=len(runs),
-                successful_runs=sum(1 for run in runs if run.status == FetchRunStatus.SUCCESS),
-                failed_runs=sum(1 for run in runs if run.status == FetchRunStatus.FAILED),
-                last_successful_run_at=last_success.started_at if last_success else None,
-                last_failed_run_at=last_failed.started_at if last_failed else None,
-                last_error_message=last_failed.error_message if last_failed else None,
-                latest_run_status=latest_run.status.value if latest_run else None,
-                latest_run_started_at=latest_run.started_at if latest_run else None,
+                provider=provider_enum.value, **self.repository.ingestion_health(provider_enum)
             ),
         )
 
@@ -201,7 +252,10 @@ class ReportService:
         return ApiResponse(
             responseCode=200,
             message="Raw activity retrieved successfully",
-            data=[RawActivityRow(source_type=source_type.value, count=count) for source_type, count in rows],
+            data=[
+                RawActivityRow(source_type=source_type.value, count=count)
+                for source_type, count in rows
+            ],
         )
 
     def get_exchange_buy_preview(
@@ -221,7 +275,11 @@ class ReportService:
         if quote is None or quote.buy_rate in (None, Decimal("0")):
             raise NotFoundError(
                 "Buy quote not found for the requested pair",
-                data={"provider": provider, "base_currency": base_currency, "quote_currency": quote_currency},
+                data={
+                    "provider": provider,
+                    "base_currency": base_currency,
+                    "quote_currency": quote_currency,
+                },
             )
 
         asset_received = amount_in_quote / quote.buy_rate
@@ -230,7 +288,9 @@ class ReportService:
             message="Exchange buy preview retrieved successfully",
             data=ExchangeBuyPreviewReport(
                 provider=provider_enum.value,
-                provider_symbol=quote.provider_asset.provider_symbol if quote.provider_asset else None,
+                provider_symbol=quote.provider_asset.provider_symbol
+                if quote.provider_asset
+                else None,
                 base_currency=quote.base_currency,
                 quote_currency=quote.quote_currency,
                 amount_in_quote=amount_in_quote,
@@ -239,6 +299,45 @@ class ReportService:
                 captured_at=quote.captured_at,
                 last_seen_at=quote.last_seen_at,
             ),
+        )
+
+    def get_crypto_exchange_buy_previews(
+        self,
+        *,
+        base_currency: str,
+        quote_currency: str,
+        amount_in_quote: Decimal,
+    ) -> ApiResponse[list[CryptoExchangeBuyPreviewRow]]:
+        rows = self.repository.get_latest_crypto_quotes_for_pair(
+            base_currency=base_currency.upper(),
+            quote_currency=quote_currency.upper(),
+        )
+        items: list[CryptoExchangeBuyPreviewRow] = []
+        seen_providers: set[str] = set()
+        for quote, provider in rows:
+            if provider.slug in seen_providers or quote.buy_rate in (None, Decimal("0")):
+                continue
+            seen_providers.add(provider.slug)
+            items.append(
+                CryptoExchangeBuyPreviewRow(
+                    provider=self._exchange_preview_provider(provider),
+                    provider_symbol=quote.provider_asset.provider_symbol
+                    if quote.provider_asset
+                    else None,
+                    base_currency=quote.base_currency,
+                    quote_currency=quote.quote_currency,
+                    amount_in_quote=amount_in_quote,
+                    buy_rate=quote.buy_rate,
+                    asset_received=amount_in_quote / quote.buy_rate,
+                    captured_at=quote.captured_at,
+                    last_seen_at=quote.last_seen_at,
+                )
+            )
+
+        return ApiResponse(
+            responseCode=200,
+            message="Crypto exchange buy previews retrieved successfully",
+            data=items,
         )
 
     def get_exchange_sell_preview(
@@ -258,7 +357,11 @@ class ReportService:
         if quote is None or quote.sell_rate is None:
             raise NotFoundError(
                 "Sell quote not found for the requested pair",
-                data={"provider": provider, "base_currency": base_currency, "quote_currency": quote_currency},
+                data={
+                    "provider": provider,
+                    "base_currency": base_currency,
+                    "quote_currency": quote_currency,
+                },
             )
 
         quote_received = amount_in_base * quote.sell_rate
@@ -267,7 +370,9 @@ class ReportService:
             message="Exchange sell preview retrieved successfully",
             data=ExchangeSellPreviewReport(
                 provider=provider_enum.value,
-                provider_symbol=quote.provider_asset.provider_symbol if quote.provider_asset else None,
+                provider_symbol=quote.provider_asset.provider_symbol
+                if quote.provider_asset
+                else None,
                 base_currency=quote.base_currency,
                 quote_currency=quote.quote_currency,
                 amount_in_base=amount_in_base,
@@ -276,6 +381,45 @@ class ReportService:
                 captured_at=quote.captured_at,
                 last_seen_at=quote.last_seen_at,
             ),
+        )
+
+    def get_crypto_exchange_sell_previews(
+        self,
+        *,
+        base_currency: str,
+        quote_currency: str,
+        amount_in_base: Decimal,
+    ) -> ApiResponse[list[CryptoExchangeSellPreviewRow]]:
+        rows = self.repository.get_latest_crypto_quotes_for_pair(
+            base_currency=base_currency.upper(),
+            quote_currency=quote_currency.upper(),
+        )
+        items: list[CryptoExchangeSellPreviewRow] = []
+        seen_providers: set[str] = set()
+        for quote, provider in rows:
+            if provider.slug in seen_providers or quote.sell_rate is None:
+                continue
+            seen_providers.add(provider.slug)
+            items.append(
+                CryptoExchangeSellPreviewRow(
+                    provider=self._exchange_preview_provider(provider),
+                    provider_symbol=quote.provider_asset.provider_symbol
+                    if quote.provider_asset
+                    else None,
+                    base_currency=quote.base_currency,
+                    quote_currency=quote.quote_currency,
+                    amount_in_base=amount_in_base,
+                    sell_rate=quote.sell_rate,
+                    quote_received=amount_in_base * quote.sell_rate,
+                    captured_at=quote.captured_at,
+                    last_seen_at=quote.last_seen_at,
+                )
+            )
+
+        return ApiResponse(
+            responseCode=200,
+            message="Crypto exchange sell previews retrieved successfully",
+            data=items,
         )
 
     def get_exchange_spread(
@@ -294,7 +438,11 @@ class ReportService:
         if quote is None:
             raise NotFoundError(
                 "Quote not found for the requested pair",
-                data={"provider": provider, "base_currency": base_currency, "quote_currency": quote_currency},
+                data={
+                    "provider": provider,
+                    "base_currency": base_currency,
+                    "quote_currency": quote_currency,
+                },
             )
 
         return ApiResponse(
@@ -302,7 +450,9 @@ class ReportService:
             message="Exchange spread retrieved successfully",
             data=ExchangeSpreadReport(
                 provider=provider_enum.value,
-                provider_symbol=quote.provider_asset.provider_symbol if quote.provider_asset else None,
+                provider_symbol=quote.provider_asset.provider_symbol
+                if quote.provider_asset
+                else None,
                 base_currency=quote.base_currency,
                 quote_currency=quote.quote_currency,
                 buy_rate=quote.buy_rate,
@@ -313,6 +463,46 @@ class ReportService:
                 captured_at=quote.captured_at,
                 last_seen_at=quote.last_seen_at,
             ),
+        )
+
+    def get_crypto_exchange_spreads(
+        self,
+        *,
+        base_currency: str,
+        quote_currency: str,
+    ) -> ApiResponse[list[CryptoExchangeSpreadRow]]:
+        rows = self.repository.get_latest_crypto_quotes_for_pair(
+            base_currency=base_currency.upper(),
+            quote_currency=quote_currency.upper(),
+        )
+        items: list[CryptoExchangeSpreadRow] = []
+        seen_providers: set[str] = set()
+        for quote, provider in rows:
+            if provider.slug in seen_providers:
+                continue
+            seen_providers.add(provider.slug)
+            items.append(
+                CryptoExchangeSpreadRow(
+                    provider=self._exchange_preview_provider(provider),
+                    provider_symbol=quote.provider_asset.provider_symbol
+                    if quote.provider_asset
+                    else None,
+                    base_currency=quote.base_currency,
+                    quote_currency=quote.quote_currency,
+                    buy_rate=quote.buy_rate,
+                    sell_rate=quote.sell_rate,
+                    mid_rate=quote.mid_rate,
+                    spread=self._compute_spread(quote.buy_rate, quote.sell_rate),
+                    spread_percent=self._compute_spread_percent(quote.buy_rate, quote.sell_rate),
+                    captured_at=quote.captured_at,
+                    last_seen_at=quote.last_seen_at,
+                )
+            )
+
+        return ApiResponse(
+            responseCode=200,
+            message="Crypto exchange spreads retrieved successfully",
+            data=items,
         )
 
     def get_quote_trend(
@@ -351,7 +541,9 @@ class ReportService:
             message="Quote trend retrieved successfully",
             data=QuoteTrendReport(
                 provider=provider_enum.value,
-                provider_symbol=latest.provider_asset.provider_symbol if latest.provider_asset else None,
+                provider_symbol=latest.provider_asset.provider_symbol
+                if latest.provider_asset
+                else None,
                 base_currency=base_currency.upper(),
                 quote_currency=quote_currency.upper(),
                 period=period.lower(),
@@ -369,6 +561,70 @@ class ReportService:
                     for row, observed_at in rows
                 ],
             ),
+        )
+
+    def get_crypto_quote_trends(
+        self,
+        *,
+        base_currency: str,
+        quote_currency: str,
+        period: str,
+    ) -> ApiResponse[list[CryptoQuoteTrendReport]]:
+        duration = self._resolve_period(period)
+        ended_at = datetime.now(UTC)
+        started_at = ended_at - duration
+        rows = self.repository.get_crypto_quote_trends_for_pair(
+            base_currency=base_currency.upper(),
+            quote_currency=quote_currency.upper(),
+            started_at=started_at,
+            ended_at=ended_at,
+        )
+
+        grouped: dict[str, dict] = {}
+        for quote, provider, observed_at in rows:
+            group = grouped.setdefault(
+                provider.slug,
+                {
+                    "provider": provider,
+                    "provider_symbol": quote.provider_asset.provider_symbol
+                    if quote.provider_asset
+                    else None,
+                    "points": [],
+                },
+            )
+            group["provider_symbol"] = (
+                quote.provider_asset.provider_symbol
+                if quote.provider_asset
+                else group["provider_symbol"]
+            )
+            group["points"].append(
+                QuoteTrendPoint(
+                    captured_at=observed_at,
+                    buy_rate=quote.buy_rate,
+                    sell_rate=quote.sell_rate,
+                    mid_rate=quote.mid_rate,
+                    market_price=quote.market_price,
+                )
+            )
+
+        items = [
+            CryptoQuoteTrendReport(
+                provider=self._exchange_preview_provider(group["provider"]),
+                provider_symbol=group["provider_symbol"],
+                base_currency=base_currency.upper(),
+                quote_currency=quote_currency.upper(),
+                period=period.lower(),
+                points_count=len(group["points"]),
+                started_at=started_at,
+                ended_at=ended_at,
+                points=group["points"],
+            )
+            for group in grouped.values()
+        ]
+        return ApiResponse(
+            responseCode=200,
+            message="Crypto quote trends retrieved successfully",
+            data=items,
         )
 
     def get_giftcard_sell_preview(
@@ -447,10 +703,13 @@ class ReportService:
                 rate = None
             else:
                 distinct_variants = {match.giftcard_variant_id for match in matches}
-                distinct_currencies = {match.source_currency for match in matches if match.source_currency}
+                distinct_currencies = {
+                    match.source_currency for match in matches if match.source_currency
+                }
                 if len(distinct_variants) > 1 or len(distinct_currencies) > 1:
                     raise ConflictError(
-                        "Multiple gift card rate matches found. Please provide rate_id or more filters.",
+                        "Multiple gift card rate matches found. "
+                        "Please provide rate_id or more filters.",
                         data={
                             "provider": provider,
                             "asset_code": asset_code,
@@ -497,10 +756,14 @@ class ReportService:
             raise BadRequestError("This offer requires a whole-number face value")
         denominations = conditions.get("allowed_denominations") or []
         if denominations and face_value not in {Decimal(x) for x in denominations}:
-            raise BadRequestError("Unsupported card denomination", data={"allowed_denominations": denominations})
+            raise BadRequestError(
+                "Unsupported card denomination", data={"allowed_denominations": denominations}
+            )
         if conditions.get("amount_step") and face_value % Decimal(conditions["amount_step"]) != 0:
-            raise BadRequestError("Face value does not match this offer's required increment",
-                                  data={"amount_step": conditions["amount_step"]})
+            raise BadRequestError(
+                "Face value does not match this offer's required increment",
+                data={"amount_step": conditions["amount_step"]},
+            )
         payout_amount = face_value * rate.rate_value
         if provider_row.slug == "tbay":
             payout_amount = payout_amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)

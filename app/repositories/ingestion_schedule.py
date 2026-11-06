@@ -65,3 +65,35 @@ class IngestionScheduleRepository:
 
     def refresh(self, schedule: IngestionSchedule) -> None:
         self.db.refresh(schedule)
+
+    def enqueue_due(self, schedule_id, *, now):
+        from datetime import timedelta
+
+        from app.repositories.ingestion_job import IngestionJobRepository
+
+        try:
+            schedule = (
+                self.db.query(IngestionSchedule)
+                .filter(
+                    IngestionSchedule.id == schedule_id,
+                    IngestionSchedule.is_enabled.is_(True),
+                    IngestionSchedule.next_run_at <= now,
+                )
+                .with_for_update(skip_locked=True)
+                .populate_existing()
+                .one_or_none()
+            )
+            if schedule is None:
+                self.db.commit()
+                return None
+            job_id = IngestionJobRepository(self.db).enqueue(
+                provider_slug=schedule.provider.slug,
+                job_type=schedule.job_type.value,
+                commit=False,
+            )
+            schedule.next_run_at = now + timedelta(minutes=schedule.interval_minutes)
+            self.db.commit()
+            return job_id
+        except Exception:
+            self.db.rollback()
+            raise

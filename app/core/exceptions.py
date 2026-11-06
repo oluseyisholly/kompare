@@ -20,7 +20,9 @@ class AppError(Exception):
 
 
 class NotFoundError(AppError):
-    def __init__(self, message: str = "Resource not found", *, data: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self, message: str = "Resource not found", *, data: dict[str, Any] | None = None
+    ) -> None:
         super().__init__(
             message,
             status_code=404,
@@ -40,7 +42,9 @@ class BadRequestError(AppError):
 
 
 class UnauthorizedError(AppError):
-    def __init__(self, message: str = "Unauthorized", *, data: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self, message: str = "Unauthorized", *, data: dict[str, Any] | None = None
+    ) -> None:
         super().__init__(
             message,
             status_code=401,

@@ -47,6 +47,8 @@ class QuidaxIngestionService:
     async def ingest(self, *, include_kyc: bool = True) -> dict[str, int]:
         fetch_run = self.fetch_run_repository.create_pending(ProviderName.QUIDAX)
 
+        failures = []
+
         try:
             async with httpx.AsyncClient() as client:
                 tickers_payload = await self.adapter.fetch_tickers(client=client)
@@ -62,12 +64,15 @@ class QuidaxIngestionService:
                 payload=tickers_payload,
             )
 
-            provider_assets = self.provider_asset_repository.get_active_by_provider(ProviderName.QUIDAX)
+            provider_assets = self.provider_asset_repository.get_active_by_provider(
+                ProviderName.QUIDAX
+            )
             quotes_created = self._persist_tickers(
                 tickers_payload=tickers_payload,
                 fetch_run=fetch_run,
                 raw_record=tickers_raw,
                 provider_assets=provider_assets,
+                failures=failures,
             )
 
             kyc_levels_created = 0
@@ -88,15 +93,29 @@ class QuidaxIngestionService:
                     kyc_document=kyc_document,
                 )
 
-            self.fetch_run_repository.mark_success(
-                fetch_run,
-                records_fetched=len(tickers_payload.get("data", {})),
-            )
+            fetch_run.metadata_json = {"extraction_failures": failures}
+            if failures:
+                fetch_run.records_fetched = max(
+                    0, len(tickers_payload.get("data", {})) - len(failures)
+                )
+                self.fetch_run_repository.mark_failed(
+                    fetch_run, error_message="Partial price extraction; see metadata"
+                )
+            else:
+                self.fetch_run_repository.mark_success(
+                    fetch_run, records_fetched=len(tickers_payload.get("data", {}))
+                )
 
             return {
                 "fetch_run_id": fetch_run.id,
                 "markets_processed": len(provider_assets),
                 "quotes_created": quotes_created,
+                "extraction_failures": failures,
+                "status": (
+                    "partial" if len(tickers_payload.get("data", {})) > len(failures) else "failed"
+                )
+                if failures
+                else "success",
                 "kyc_levels_created": kyc_levels_created,
             }
         except Exception as exc:
@@ -154,8 +173,10 @@ class QuidaxIngestionService:
         fetch_run: FetchRun,
         raw_record: RawRecord,
         provider_assets: dict[str, ProviderAsset],
+        failures=None,
     ) -> int:
         quotes: list[Quote] = []
+        failures = [] if failures is None else failures
 
         for market_id, market_data in tickers_payload.get("data", {}).items():
             provider_asset = provider_assets.get(market_id)
@@ -166,9 +187,9 @@ class QuidaxIngestionService:
                 logger.info("Skipping non-focus asset ticker for market %s", market_id)
                 continue
 
-            ticker = market_data.get("ticker", {})
-            quotes.append(
-                Quote(
+            try:
+                ticker = market_data.get("ticker", {})
+                quote = Quote(
                     provider=ProviderName.QUIDAX,
                     asset_id=provider_asset.asset_id,
                     provider_asset_id=provider_asset.id,
@@ -189,8 +210,18 @@ class QuidaxIngestionService:
                         "volume": ticker.get("vol"),
                     },
                 )
-            )
+                QuoteRepository.validate_quote(quote)
+                quotes.append(quote)
+            except (ValueError, TypeError, ArithmeticError, AttributeError):
+                failures.append(
+                    {
+                        "record": str(market_id),
+                        "error": "Invalid or missing provider price; current data preserved",
+                    }
+                )
 
+        if not quotes and not failures:
+            failures.append({"error": "No usable provider prices; current data preserved"})
         return self.quote_repository.create_many(quotes)
 
     def _base_currency(self, provider_asset: ProviderAsset) -> str:

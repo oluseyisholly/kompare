@@ -1,4 +1,15 @@
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Index, Integer, JSON, Numeric, String, func
+from sqlalchemy import (
+    JSON,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    func,
+)
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -34,9 +45,14 @@ class Quote(TimestampMixin, Base):
 
 
 Index(
-    "uq_quotes_current_pair", Quote.provider, Quote.asset_id,
-    Quote.base_currency, Quote.quote_currency, Quote.quote_type,
-    unique=True, postgresql_where=Quote.superseded_at.is_(None),
+    "uq_quotes_current_pair",
+    Quote.provider,
+    Quote.asset_id,
+    Quote.base_currency,
+    Quote.quote_currency,
+    Quote.quote_type,
+    unique=True,
+    postgresql_where=Quote.superseded_at.is_(None),
     sqlite_where=Quote.superseded_at.is_(None),
 )
 

@@ -1,10 +1,9 @@
-from fastapi import APIRouter, Depends
-from fastapi import Query
+from fastapi import APIRouter, Depends, Query
 
 from app.dependencies.auth import require_admin
 from app.dependencies.providers import get_provider_service
 from app.schemas.auth import AuthenticatedUser
-from app.schemas.common import ApiResponse
+from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.giftcard import GiftCardRateRead, GiftCardVariantRead
 from app.schemas.ingestion_schedule import IngestionScheduleRead, IngestionScheduleUpsert
 from app.schemas.platform import (
@@ -15,8 +14,7 @@ from app.schemas.platform import (
     PlatformQuoteRead,
     RawRecordRead,
 )
-from app.schemas.provider import ProviderRead, ProviderUpdate
-from app.schemas.common import PaginatedData
+from app.schemas.provider import ProviderOverviewRead, ProviderRead, ProviderUpdate
 from app.services.provider import ProviderService
 
 router = APIRouter(prefix="/providers", tags=["providers"])
@@ -29,6 +27,33 @@ def list_providers(
     return service.list_providers()
 
 
+@router.get("/overview", response_model=ApiResponse[PaginatedData[ProviderOverviewRead]])
+def list_provider_overview(
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=20, ge=1, le=100),
+    search: str | None = Query(default=None),
+    category: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    service: ProviderService = Depends(get_provider_service),
+) -> ApiResponse[PaginatedData[ProviderOverviewRead]]:
+    return service.list_provider_overview(
+        page=page,
+        per_page=per_page,
+        search=search,
+        category=category,
+        status=status,
+    )
+
+
+@router.post("/metrics/refresh", response_model=ApiResponse[dict])
+def refresh_all_provider_metrics(
+    service: ProviderService = Depends(get_provider_service),
+    current_user: AuthenticatedUser = Depends(require_admin),
+) -> ApiResponse[dict]:
+    del current_user
+    return service.refresh_all_provider_metrics()
+
+
 @router.get("/{slug}/crypto/assets", response_model=ApiResponse[PaginatedData[PlatformAssetRead]])
 def get_provider_crypto_assets(
     slug: str,
@@ -39,7 +64,9 @@ def get_provider_crypto_assets(
     return service.get_assets(slug, page=page, per_page=per_page)
 
 
-@router.get("/{slug}/giftcards/variants", response_model=ApiResponse[PaginatedData[GiftCardVariantRead]])
+@router.get(
+    "/{slug}/giftcards/variants", response_model=ApiResponse[PaginatedData[GiftCardVariantRead]]
+)
 def get_provider_giftcard_variants(
     slug: str,
     page: int = Query(default=1, ge=1),
@@ -109,6 +136,7 @@ def get_provider_raw_records(
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=20, ge=1, le=100),
     service: ProviderService = Depends(get_provider_service),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> ApiResponse[PaginatedData[RawRecordRead]]:
     return service.get_raw_records(slug, page=page, per_page=per_page)
 
@@ -147,8 +175,20 @@ def update_provider(
     slug: str,
     payload: ProviderUpdate,
     service: ProviderService = Depends(get_provider_service),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> ApiResponse[ProviderRead]:
+    del current_user
     return service.update_provider(slug, payload)
+
+
+@router.post("/{slug}/metrics/refresh", response_model=ApiResponse[ProviderOverviewRead])
+def refresh_provider_metrics(
+    slug: str,
+    service: ProviderService = Depends(get_provider_service),
+    current_user: AuthenticatedUser = Depends(require_admin),
+) -> ApiResponse[ProviderOverviewRead]:
+    del current_user
+    return service.refresh_provider_metrics(slug)
 
 
 @router.post("/bootstrap", response_model=ApiResponse[dict], status_code=202)
@@ -168,6 +208,18 @@ async def trigger_provider_bootstrap(
 ) -> ApiResponse[dict]:
     del current_user
     return await service.trigger_bootstrap(slug)
+
+
+@router.post("/{slug}/ingestion-runs/{job_type}", response_model=ApiResponse[dict], status_code=202)
+async def trigger_provider_ingestion_run(
+    slug: str,
+    job_type: str,
+    include_kyc: bool = Query(default=False),
+    service: ProviderService = Depends(get_provider_service),
+    current_user: AuthenticatedUser = Depends(require_admin),
+) -> ApiResponse[dict]:
+    del current_user
+    return service.trigger_ingestion_run(slug, job_type, include_kyc=include_kyc)
 
 
 @router.get("/{slug}/ingestion-schedules", response_model=ApiResponse[list[IngestionScheduleRead]])
@@ -191,3 +243,36 @@ def upsert_provider_ingestion_schedule(
 ) -> ApiResponse[IngestionScheduleRead]:
     del current_user
     return service.upsert_ingestion_schedule(slug, job_type, payload)
+
+
+@router.get("/{slug}/ingestion-jobs/{job_id}", response_model=ApiResponse[dict])
+def get_ingestion_job(
+    slug: str,
+    job_id: int,
+    service: ProviderService = Depends(get_provider_service),
+    current_user: AuthenticatedUser = Depends(require_admin),
+):
+    from app.core.exceptions import NotFoundError
+    from app.models.ingestion_job import IngestionJob
+
+    row = (
+        service.repository.db.query(IngestionJob)
+        .filter_by(id=job_id, provider_slug=None if slug == "all" else slug)
+        .one_or_none()
+    )
+    if row is None:
+        raise NotFoundError("Ingestion job not found")
+    return ApiResponse(
+        responseCode=200,
+        message="Ingestion job retrieved",
+        data={
+            "id": row.id,
+            "provider": row.provider_slug,
+            "job_type": row.job_type,
+            "status": row.status,
+            "attempts": row.attempts,
+            "queued_at": row.queued_at,
+            "finished_at": row.finished_at,
+            "error_message": row.error_message,
+        },
+    )

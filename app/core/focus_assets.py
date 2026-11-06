@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 FOCUS_ASSET_CODES: set[str] = {
     "BTC",
     "USDT",

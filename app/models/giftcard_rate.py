@@ -1,4 +1,16 @@
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, JSON, Numeric, String, func
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    func,
+)
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -11,7 +23,9 @@ class GiftCardRate(TimestampMixin, Base):
 
     id = Column(Integer, primary_key=True, index=True)
     provider_id = Column(Integer, ForeignKey("providers.id"), nullable=False, index=True)
-    giftcard_variant_id = Column(Integer, ForeignKey("giftcard_variants.id"), nullable=False, index=True)
+    giftcard_variant_id = Column(
+        Integer, ForeignKey("giftcard_variants.id"), nullable=False, index=True
+    )
     fetch_run_id = Column(Integer, ForeignKey("fetch_runs.id"), nullable=True, index=True)
     raw_record_id = Column(Integer, ForeignKey("raw_records.id"), nullable=True, index=True)
     rate_value = Column(Numeric(24, 8), nullable=False)
@@ -27,7 +41,9 @@ class GiftCardRate(TimestampMixin, Base):
     minimum_face_value = Column(Numeric(24, 8), nullable=True)
     maximum_face_value = Column(Numeric(24, 8), nullable=True)
     is_active = Column(Boolean, nullable=False, default=True, server_default="true")
-    captured_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), index=True)
+    captured_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
     last_seen_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     superseded_at = Column(DateTime(timezone=True), nullable=True)
     metadata_json = Column(JSON, nullable=True)
@@ -38,7 +54,12 @@ class GiftCardRate(TimestampMixin, Base):
     raw_record = relationship("RawRecord", back_populates="giftcard_rates")
 
 
-Index("uq_giftcard_rates_current", GiftCardRate.provider_id, GiftCardRate.giftcard_variant_id,
-      GiftCardRate.rate_currency, unique=True,
-      postgresql_where=GiftCardRate.superseded_at.is_(None),
-      sqlite_where=GiftCardRate.superseded_at.is_(None))
+Index(
+    "uq_giftcard_rates_current",
+    GiftCardRate.provider_id,
+    GiftCardRate.giftcard_variant_id,
+    GiftCardRate.rate_currency,
+    unique=True,
+    postgresql_where=GiftCardRate.superseded_at.is_(None),
+    sqlite_where=GiftCardRate.superseded_at.is_(None),
+)

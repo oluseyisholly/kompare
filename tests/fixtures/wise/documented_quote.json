@@ -1,0 +1,34 @@
+{
+  "sourceCurrency": "GBP",
+  "targetCurrency": "USD",
+  "sourceAmount": 100,
+  "targetAmount": 129.24,
+  "rate": 1.30445,
+  "createdTime": "2019-04-05T13:18:58Z",
+  "rateExpirationTime": "2019-04-08T13:18:57Z",
+  "expirationTime": "2019-04-05T13:48:58Z",
+  "providedAmountType": "SOURCE",
+  "payOut": "BANK_TRANSFER",
+  "paymentOptions": [
+    {
+      "disabled": false,
+      "estimatedDelivery": "2019-04-08T12:30:00Z",
+      "formattedEstimatedDelivery": "by Apr 8",
+      "sourceAmount": 100,
+      "targetAmount": 129.24,
+      "sourceCurrency": "GBP",
+      "targetCurrency": "USD",
+      "payIn": "BANK_TRANSFER",
+      "payOut": "BANK_TRANSFER",
+      "payInProduct": "CHEAP",
+      "fee": {"transferwise": 3.04, "payIn": 0, "discount": 2.27, "partner": 0, "total": 0.77},
+      "price": {
+        "total": {"type": "TOTAL", "label": "Total fees", "value": {"amount": 0.77, "currency": "GBP"}},
+        "items": [
+          {"type": "FEE", "label": "fee", "value": {"amount": 3.04, "currency": "GBP"}},
+          {"type": "DISCOUNT", "label": "Discount", "value": {"amount": -2.27, "currency": "GBP"}}
+        ]
+      }
+    }
+  ]
+}

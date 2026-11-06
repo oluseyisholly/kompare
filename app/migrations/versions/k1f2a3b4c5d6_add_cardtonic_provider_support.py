@@ -5,11 +5,11 @@ Revises: j0e1f2a3b4c5
 Create Date: 2026-09-01 16:45:00.000000
 
 """
+
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "k1f2a3b4c5d6"
@@ -24,7 +24,8 @@ def upgrade() -> None:
     op.execute(
         sa.text(
             """
-            INSERT INTO providers (slug, name, description, website_url, category, is_active, has_adapter)
+            INSERT INTO providers (slug, name, description, website_url,
+                                   category, is_active, has_adapter)
             SELECT :slug, :name, :description, :website_url, :category, :is_active, :has_adapter
             WHERE NOT EXISTS (
                 SELECT 1 FROM providers WHERE slug = :slug

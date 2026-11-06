@@ -4,11 +4,16 @@ from typing import Any
 
 import httpx
 
-from app.core.config import CARDTONIC_API_ENV, CARDTONIC_BASE_URL, CARDTONIC_SITE_URL, CARDTONIC_KYC_URL
 from app.adapters.giftcard.cardtonic_kyc import parse_kyc_article
-from app.utils.scraper import get_soup
+from app.core.config import (
+    CARDTONIC_API_ENV,
+    CARDTONIC_BASE_URL,
+    CARDTONIC_KYC_URL,
+    CARDTONIC_SITE_URL,
+)
 from app.models.enums import MarketCategory, ProviderName
 from app.utils.http_client import get_json
+from app.utils.scraper import get_soup
 
 
 class CardtonicAdapter:
@@ -29,7 +34,9 @@ class CardtonicAdapter:
         self.api_env = api_env
         self.kyc_url = kyc_url
 
-    async def fetch_kyc_document(self, *, client: httpx.AsyncClient | None = None) -> dict[str, Any]:
+    async def fetch_kyc_document(
+        self, *, client: httpx.AsyncClient | None = None
+    ) -> dict[str, Any]:
         soup = await get_soup(self.kyc_url, client=client, timeout=20)
         return parse_kyc_article(soup)
 

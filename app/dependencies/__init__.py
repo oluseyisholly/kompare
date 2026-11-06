@@ -1,4 +1,5 @@
 from app.dependencies.providers import (
+    get_admin_user_service,
     get_asset_repository,
     get_auth_service,
     get_busha_adapter,
@@ -13,7 +14,6 @@ from app.dependencies.providers import (
     get_ingestion_schedule_repository,
     get_kyc_repository,
     get_provider_asset_repository,
-    get_user_repository,
     get_quidax_adapter,
     get_quidax_ingestion_service,
     get_quidax_service,
@@ -21,11 +21,13 @@ from app.dependencies.providers import (
     get_raw_record_repository,
     get_report_repository,
     get_report_service,
+    get_user_repository,
 )
 
 __all__ = [
     "get_asset_repository",
     "get_auth_service",
+    "get_admin_user_service",
     "get_busha_adapter",
     "get_busha_ingestion_service",
     "get_busha_service",

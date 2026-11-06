@@ -1,4 +1,15 @@
-from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, JSON, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    Enum,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -9,7 +20,9 @@ from app.models.mixins import TimestampMixin
 class GiftCardVariant(TimestampMixin, Base):
     __tablename__ = "giftcard_variants"
     __table_args__ = (
-        UniqueConstraint("provider_id", "external_id", name="uq_giftcard_variants_provider_external_id"),
+        UniqueConstraint(
+            "provider_id", "external_id", name="uq_giftcard_variants_provider_external_id"
+        ),
     )
 
     id = Column(Integer, primary_key=True, index=True)

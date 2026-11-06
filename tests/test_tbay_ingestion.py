@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-import app.models
+
 from app.core.database import Base
 from app.core.exceptions import BadRequestError, NotFoundError
 from app.models.enums import FetchRunStatus, MarketCategory
@@ -26,20 +26,32 @@ class TbayIngestionTests(unittest.IsolatedAsyncioTestCase):
         self.engine = create_engine("sqlite://")
         Base.metadata.create_all(self.engine)
         self.db = Session(self.engine)
-        self.db.add(Provider(slug="tbay", name="Tbay", category=MarketCategory.GIFTCARD, has_adapter=True))
+        self.db.add(
+            Provider(slug="tbay", name="Tbay", category=MarketCategory.GIFTCARD, has_adapter=True)
+        )
         self.db.commit()
-        self.offer = {"code": "offer1", "giftcardType": "razer", "tradeCurrency": "USD",
-                      "tradeCoin": "Points", "discount": "0.877041", "minTrade": 10,
-                      "maxTrade": 100, "tagList": ["Accepts Multiples of 5"], "status": "1"}
+        self.offer = {
+            "code": "offer1",
+            "giftcardType": "razer",
+            "tradeCurrency": "USD",
+            "tradeCoin": "Points",
+            "discount": "0.877041",
+            "minTrade": 10,
+            "maxTrade": 100,
+            "tagList": ["Accepts Multiples of 5"],
+            "status": "1",
+        }
         self.adapter = AsyncMock()
         self.adapter.fetch_categories.return_value = [{"code": "razer", "name": "Razer Gift Card"}]
         self.adapter.fetch_currencies.return_value = [{"currency": "USD"}]
         self.adapter.fetch_offers.return_value = [self.offer]
         self.adapter.fetch_points_rate.return_value = {"mid": "1255.19"}
         self.adapter.source_url = lambda code: "https://api.tbay.store/api?code=" + code
-        self.service = TbayIngestionService(adapter=self.adapter,
+        self.service = TbayIngestionService(
+            adapter=self.adapter,
             catalog_repository=TbayCatalogRepository(self.db, GiftCardRateRepository(self.db)),
-            fetch_run_repository=FetchRunRepository(self.db))
+            fetch_run_repository=FetchRunRepository(self.db),
+        )
         self.reports = ReportService(ReportRepository(self.db), ProviderRepository(self.db))
 
     async def asyncTearDown(self):
@@ -47,8 +59,13 @@ class TbayIngestionTests(unittest.IsolatedAsyncioTestCase):
         self.engine.dispose()
 
     def preview(self, rate_id, amount):
-        return self.reports.get_giftcard_sell_preview("tbay", rate_id=rate_id,
-            asset_code=None, source_currency=None, face_value=Decimal(amount))
+        return self.reports.get_giftcard_sell_preview(
+            "tbay",
+            rate_id=rate_id,
+            asset_code=None,
+            source_currency=None,
+            face_value=Decimal(amount),
+        )
 
     async def test_repeated_run_changed_rate_and_calculation(self):
         self.assertEqual((await self.service.ingest())["rates_created"], 1)
@@ -72,7 +89,10 @@ class TbayIngestionTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(RuntimeError):
             await self.service.ingest()
         self.assertEqual(self.db.query(GiftCardRate).one().last_seen_at, seen)
-        self.assertEqual(self.db.query(FetchRun).order_by(FetchRun.id.desc()).first().status, FetchRunStatus.FAILED)
+        self.assertEqual(
+            self.db.query(FetchRun).order_by(FetchRun.id.desc()).first().status,
+            FetchRunStatus.FAILED,
+        )
 
     async def test_denominations_increments_and_limits(self):
         self.offer["fixTrade"] = "10||50||100"
@@ -100,10 +120,12 @@ class TbayIngestionTests(unittest.IsolatedAsyncioTestCase):
         original = self.db.query(GiftCardRate).one()
         seen = original.last_seen_at
         self.adapter.fetch_currencies.return_value = [{"currency": "USD"}, {"currency": "CAD"}]
+
         async def fetch(category, currency, **kwargs):
             if currency == "USD":
                 raise RuntimeError("unstable pagination")
             return [{**self.offer, "code": "cad-offer", "tradeCurrency": "CAD"}]
+
         self.adapter.fetch_offers.side_effect = fetch
         result = await self.service.ingest()
         self.assertEqual(result["status"], "partial")
