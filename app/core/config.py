@@ -12,6 +12,11 @@ def _get_bool(name: str, default: bool) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+CORS_ALLOW_ORIGINS = [
+    origin.strip() for origin in os.getenv("CORS_ALLOW_ORIGINS", "*").split(",") if origin.strip()
+]
+
+
 QUIDAX_BASE_URL = os.getenv("QUIDAX_BASE_URL", "https://openapi.quidax.io")
 QUIDAX_API_KEY = os.getenv("QUIDAX_API_KEY")
 QUIDAX_KYC_URL = os.getenv(

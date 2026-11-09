@@ -3,6 +3,9 @@
 For the Provider Reviews collection with a simple login, see
 [Provider Reviews in Postman](PROVIDER-REVIEWS.md).
 
+For Providers, including category filtering and admin operations, see
+[Providers API in Postman](PROVIDERS.md).
+
 Import both files in this directory into Postman:
 
 - `Kompare-Auth.postman_collection.json`

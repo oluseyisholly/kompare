@@ -63,6 +63,12 @@ POSTGRES_PORT=5432
 
 You can also use the provided `.env.example` as a template.
 
+Browser CORS access allows all origins by default (`CORS_ALLOW_ORIGINS=*`). Methods
+and request headers, including `Authorization`, are allowed. Protected endpoints still
+require their normal bearer token and role. Cookie credentials are not enabled.
+To restrict origins, set a comma-separated list of frontend origins in `.env`, then
+restart the API. CORS headers also cover error responses, and `Retry-After` is exposed.
+
 Set `SECRET_KEY` in your `.env` to a private, randomly generated value before
 starting the app. Generate one with:
 

@@ -1,8 +1,7 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-
 import app.models  # noqa: F401
+from app.core.cors import CorsFastAPI
 from app.core.error_handlers import register_exception_handlers
 from app.core.logger import logger
 from app.core.openapi import register_provider_documentation
@@ -31,7 +30,7 @@ async def lifespan(application):
 
 
 # Initialize FastAPI application with metadata
-app = FastAPI(
+app = CorsFastAPI(
     title="Kompare",
     version="1.0",
     description="Compare provider rates, gift cards and verification requirements.",

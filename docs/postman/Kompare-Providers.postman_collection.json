@@ -1,0 +1,2262 @@
+{
+  "info": {
+    "name": "Kompare - Providers",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "All seven operations currently in the Providers Swagger group, plus simple login and category-filter examples. Folders: Authentication, User, Admin. Import/select the companion environment; set base_url and an existing verified email/password. Login automatically saves access_token. Public reads require no login; admin writes require a current super_admin or support_admin. All accounts, IDs and responses are illustrative. Category-specific examples and a deliberately invalid-category request are included. Other Swagger sections (Ingestion, KYC, Crypto, Gift Cards, FX, Provider Reviews) have separate APIs outside this collection. Send requests individually. Update/metrics/ingestion requests change state when sent; importing does not send them."
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Login with an existing active, email-verified account. Saves access_token automatically. For Admin requests, use a current super_admin or support_admin account. Public provider reads do not need login.",
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Set email and password for an existing active, email-verified account. Saves access_token for all authenticated requests in this collection. Use the same request with an admin account before moderation. Registration, OTP verification and refresh are in the separate Auth collection.",
+                "url": {
+                  "raw": "{{base_url}}/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"ExamplePassword123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 200,\n  \"message\": \"Login successful\",\n  \"data\": {\n    \"access_token\": \"example-access-token-replace-with-real-login-result\",\n    \"refresh_token\": \"example-refresh-token-replace-with-real-login-result\",\n    \"token_type\": \"bearer\",\n    \"user\": {\n      \"id\": 1,\n      \"email\": \"user@example.com\",\n      \"first_name\": \"Ada\",\n      \"last_name\": \"Okafor\",\n      \"phone_number\": null,\n      \"role\": \"user\",\n      \"admin_type\": null,\n      \"status\": \"active\",\n      \"is_superadmin\": false,\n      \"is_active\": true,\n      \"is_verified\": true,\n      \"is_phone_verified\": false,\n      \"last_login_at\": \"2026-11-09T10:00:00Z\",\n      \"created_at\": \"2026-11-09T10:00:00Z\",\n      \"updated_at\": \"2026-11-09T10:00:00Z\"\n    }\n  }\n}"
+            },
+            {
+              "name": "Invalid credentials",
+              "originalRequest": {
+                "method": "POST",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Set email and password for an existing active, email-verified account. Saves access_token for all authenticated requests in this collection. Use the same request with an admin account before moderation. Registration, OTP verification and refresh are in the separate Auth collection.",
+                "url": {
+                  "raw": "{{base_url}}/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"ExamplePassword123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 401,\n  \"message\": \"Invalid email or password\",\n  \"data\": {\n    \"error\": \"unauthorized\"\n  }\n}"
+            },
+            {
+              "name": "Email not verified",
+              "originalRequest": {
+                "method": "POST",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Set email and password for an existing active, email-verified account. Saves access_token for all authenticated requests in this collection. Use the same request with an admin account before moderation. Registration, OTP verification and refresh are in the separate Auth collection.",
+                "url": {
+                  "raw": "{{base_url}}/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"ExamplePassword123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 401,\n  \"message\": \"Please verify your email address before logging in\",\n  \"data\": {\n    \"error\": \"unauthorized\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Kompare envelope\", function () { pm.expect(body.responseCode).to.eql(200); });",
+                  "  if (typeof body.data.access_token === \"string\") { pm.environment.set(\"access_token\", body.data.access_token); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "description": "Public provider catalogue, details, dashboard overview and category filters.",
+      "item": [
+        {
+          "name": "List providers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/providers/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "providers"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "Public. Returns the complete provider catalogue as an array. This endpoint does not provide pagination or category filtering; use Provider overview for those."
+          },
+          "response": [
+            {
+              "name": "Expected response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/providers/",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Public. Returns the complete provider catalogue as an array. This endpoint does not provide pagination or category filtering; use Provider overview for those."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 200,\n  \"message\": \"Providers retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"slug\": \"wise\",\n      \"name\": \"Wise\",\n      \"description\": \"Illustrative provider profile.\",\n      \"logo_url\": null,\n      \"website_url\": null,\n      \"category\": \"fx\",\n      \"is_active\": true,\n      \"has_adapter\": true,\n      \"metadata_json\": null,\n      \"created_at\": \"2026-11-09T10:00:00Z\",\n      \"updated_at\": \"2026-11-09T10:00:00Z\"\n    },\n    {\n      \"id\": 2,\n      \"slug\": \"quidax\",\n      \"name\": \"Quidax\",\n      \"description\": \"Illustrative provider profile.\",\n      \"logo_url\": null,\n      \"website_url\": null,\n      \"category\": \"crypto\",\n      \"is_active\": true,\n      \"has_adapter\": true,\n      \"metadata_json\": null,\n      \"created_at\": \"2026-11-09T10:00:00Z\",\n      \"updated_at\": \"2026-11-09T10:00:00Z\"\n    },\n    {\n      \"id\": 3,\n      \"slug\": \"cardtonic\",\n      \"name\": \"Cardtonic\",\n      \"description\": \"Illustrative provider profile.\",\n      \"logo_url\": null,\n      \"website_url\": null,\n      \"category\": \"giftcard\",\n      \"is_active\": true,\n      \"has_adapter\": true,\n      \"metadata_json\": null,\n      \"created_at\": \"2026-11-09T10:00:00Z\",\n      \"updated_at\": \"2026-11-09T10:00:00Z\"\n    },\n    {\n      \"id\": 4,\n      \"slug\": \"stanbic\",\n      \"name\": \"Stanbic IBTC Asset Management\",\n      \"description\": \"Illustrative provider profile.\",\n      \"logo_url\": null,\n      \"website_url\": null,\n      \"category\": \"mutual_fund\",\n      \"is_active\": true,\n      \"has_adapter\": true,\n      \"metadata_json\": null,\n      \"created_at\": \"2026-11-09T10:00:00Z\",\n      \"updated_at\": \"2026-11-09T10:00:00Z\"\n    }\n  ]\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Kompare envelope\", function () { pm.expect(body.responseCode).to.eql(200); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Provider overview",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/providers/overview?page=1&per_page=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "providers",
+                "overview"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "per_page",
+                  "value": "20",
+                  "disabled": false
+                },
+                {
+                  "key": "search",
+                  "value": "Wise",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "fx",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "Public. Paginated dashboard listing with cached ratings and operational metrics. Optional search matches provider name. category: crypto, giftcard, fx, mutual_fund; status: active or inactive. Category/status values are case-insensitive; omitted or empty values do not filter. page >= 1, per_page 1\u2013100. Enable disabled filters in Params."
+          },
+          "response": [
+            {
+              "name": "Expected response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/providers/overview?page=1&per_page=20",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "overview"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "disabled": false
+                    },
+                    {
+                      "key": "per_page",
+                      "value": "20",
+                      "disabled": false
+                    },
+                    {
+                      "key": "search",
+                      "value": "Wise",
+                      "disabled": true
+                    },
+                    {
+                      "key": "category",
+                      "value": "fx",
+                      "disabled": true
+                    },
+                    {
+                      "key": "status",
+                      "value": "active",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Public. Paginated dashboard listing with cached ratings and operational metrics. Optional search matches provider name. category: crypto, giftcard, fx, mutual_fund; status: active or inactive. Category/status values are case-insensitive; omitted or empty values do not filter. page >= 1, per_page 1\u2013100. Enable disabled filters in Params."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 200,\n  \"message\": \"Provider overview retrieved successfully\",\n  \"data\": {\n    \"items\": [\n      {\n        \"id\": 1,\n        \"slug\": \"wise\",\n        \"name\": \"Wise\",\n        \"description\": \"Illustrative provider profile.\",\n        \"logo_url\": null,\n        \"website_url\": null,\n        \"category\": \"fx\",\n        \"is_active\": true,\n        \"has_adapter\": true,\n        \"status\": \"active\",\n        \"average_rating\": null,\n        \"review_count\": 0,\n        \"data_source\": \"Wise Feed\",\n        \"feed_health\": \"unknown\",\n        \"coverage_score\": 0,\n        \"coverage_label\": \"0/100\",\n        \"sync_mode\": \"auto\",\n        \"last_synced_at\": null\n      },\n      {\n        \"id\": 2,\n        \"slug\": \"quidax\",\n        \"name\": \"Quidax\",\n        \"description\": \"Illustrative provider profile.\",\n        \"logo_url\": null,\n        \"website_url\": null,\n        \"category\": \"crypto\",\n        \"is_active\": true,\n        \"has_adapter\": true,\n        \"status\": \"active\",\n        \"average_rating\": null,\n        \"review_count\": 0,\n        \"data_source\": \"Quidax Feed\",\n        \"feed_health\": \"unknown\",\n        \"coverage_score\": 0,\n        \"coverage_label\": \"0/100\",\n        \"sync_mode\": \"auto\",\n        \"last_synced_at\": null\n      },\n      {\n        \"id\": 3,\n        \"slug\": \"cardtonic\",\n        \"name\": \"Cardtonic\",\n        \"description\": \"Illustrative provider profile.\",\n        \"logo_url\": null,\n        \"website_url\": null,\n        \"category\": \"giftcard\",\n        \"is_active\": true,\n        \"has_adapter\": true,\n        \"status\": \"active\",\n        \"average_rating\": null,\n        \"review_count\": 0,\n        \"data_source\": \"Cardtonic Feed\",\n        \"feed_health\": \"unknown\",\n        \"coverage_score\": 0,\n        \"coverage_label\": \"0/100\",\n        \"sync_mode\": \"auto\",\n        \"last_synced_at\": null\n      },\n      {\n        \"id\": 4,\n        \"slug\": \"stanbic\",\n        \"name\": \"Stanbic IBTC Asset Management\",\n        \"description\": \"Illustrative provider profile.\",\n        \"logo_url\": null,\n        \"website_url\": null,\n        \"category\": \"mutual_fund\",\n        \"is_active\": true,\n        \"has_adapter\": true,\n        \"status\": \"active\",\n        \"average_rating\": null,\n        \"review_count\": 0,\n        \"data_source\": \"Stanbic IBTC Asset Management Feed\",\n        \"feed_health\": \"unknown\",\n        \"coverage_score\": 0,\n        \"coverage_label\": \"0/100\",\n        \"sync_mode\": \"auto\",\n        \"last_synced_at\": null\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"per_page\": 20,\n      \"total\": 4,\n      \"total_pages\": 1,\n      \"has_next\": false,\n      \"has_previous\": false\n    }\n  }\n}"
+            },
+            {
+              "name": "Invalid category",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/providers/overview?category=banking",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "overview"
+                  ],
+                  "query": [
+                    {
+                      "key": "category",
+                      "value": "banking",
+                      "disabled": false
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Public. Paginated dashboard listing with cached ratings and operational metrics. Optional search matches provider name. category: crypto, giftcard, fx, mutual_fund; status: active or inactive. Category/status values are case-insensitive; omitted or empty values do not filter. page >= 1, per_page 1\u2013100. Enable disabled filters in Params."
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 400,\n  \"message\": \"Invalid provider category\",\n  \"data\": {\n    \"error\": \"bad_request\",\n    \"category\": \"banking\",\n    \"allowed_values\": [\n      \"crypto\",\n      \"giftcard\",\n      \"fx\",\n      \"mutual_fund\"\n    ]\n  }\n}"
+            },
+            {
+              "name": "Invalid status",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/providers/overview?status=paused",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "overview"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "paused",
+                      "disabled": false
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Public. Paginated dashboard listing with cached ratings and operational metrics. Optional search matches provider name. category: crypto, giftcard, fx, mutual_fund; status: active or inactive. Category/status values are case-insensitive; omitted or empty values do not filter. page >= 1, per_page 1\u2013100. Enable disabled filters in Params."
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 400,\n  \"message\": \"Invalid provider status\",\n  \"data\": {\n    \"error\": \"bad_request\",\n    \"status\": \"paused\",\n    \"allowed_values\": [\n      \"active\",\n      \"inactive\"\n    ]\n  }\n}"
+            },
+            {
+              "name": "Invalid page",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/providers/overview?page=0",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "overview"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0",
+                      "disabled": false
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Public. Paginated dashboard listing with cached ratings and operational metrics. Optional search matches provider name. category: crypto, giftcard, fx, mutual_fund; status: active or inactive. Category/status values are case-insensitive; omitted or empty values do not filter. page >= 1, per_page 1\u2013100. Enable disabled filters in Params."
+              },
+              "status": "Unprocessable Content",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 422,\n  \"message\": \"Validation failed\",\n  \"data\": {\n    \"error\": \"validation_error\",\n    \"details\": [\n      {\n        \"loc\": [\n          \"query\",\n          \"page\"\n        ],\n        \"type\": \"greater_than_equal\",\n        \"msg\": \"Input should be greater than or equal to 1\"\n      }\n    ]\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Kompare envelope\", function () { pm.expect(body.responseCode).to.eql(200); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Provider details",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/providers/{{provider_slug}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "providers",
+                "{{provider_slug}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "Public. Get a provider profile by stable slug. Use a slug from List providers."
+          },
+          "response": [
+            {
+              "name": "Expected response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/providers/{{provider_slug}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "{{provider_slug}}"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Public. Get a provider profile by stable slug. Use a slug from List providers."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 200,\n  \"message\": \"Provider retrieved successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"slug\": \"wise\",\n    \"name\": \"Wise\",\n    \"description\": \"Illustrative provider profile.\",\n    \"logo_url\": null,\n    \"website_url\": null,\n    \"category\": \"fx\",\n    \"is_active\": true,\n    \"has_adapter\": true,\n    \"metadata_json\": null,\n    \"created_at\": \"2026-11-09T10:00:00Z\",\n    \"updated_at\": \"2026-11-09T10:00:00Z\"\n  }\n}"
+            },
+            {
+              "name": "Provider not found",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/providers/missing-provider",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "missing-provider"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Public. Get a provider profile by stable slug. Use a slug from List providers."
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 404,\n  \"message\": \"Provider not found\",\n  \"data\": {\n    \"error\": \"not_found\",\n    \"slug\": \"missing-provider\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Kompare envelope\", function () { pm.expect(body.responseCode).to.eql(200); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Category filters",
+          "item": [
+            {
+              "name": "Providers by category - crypto",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/providers/overview?category=crypto&page=1&per_page=20",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "overview"
+                  ],
+                  "query": [
+                    {
+                      "key": "category",
+                      "value": "crypto",
+                      "disabled": false
+                    },
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "disabled": false
+                    },
+                    {
+                      "key": "per_page",
+                      "value": "20",
+                      "disabled": false
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Public category filter example. All supported category values come from MarketCategory. Results reflect stored providers, not proof that all provider products or routes are supported."
+              },
+              "response": [
+                {
+                  "name": "Expected response",
+                  "originalRequest": {
+                    "method": "GET",
+                    "url": {
+                      "raw": "{{base_url}}/providers/overview?category=crypto&page=1&per_page=20",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "providers",
+                        "overview"
+                      ],
+                      "query": [
+                        {
+                          "key": "category",
+                          "value": "crypto",
+                          "disabled": false
+                        },
+                        {
+                          "key": "page",
+                          "value": "1",
+                          "disabled": false
+                        },
+                        {
+                          "key": "per_page",
+                          "value": "20",
+                          "disabled": false
+                        }
+                      ]
+                    },
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "description": "Public category filter example. All supported category values come from MarketCategory. Results reflect stored providers, not proof that all provider products or routes are supported."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"responseCode\": 200,\n  \"message\": \"Provider overview retrieved successfully\",\n  \"data\": {\n    \"items\": [\n      {\n        \"id\": 2,\n        \"slug\": \"quidax\",\n        \"name\": \"Quidax\",\n        \"description\": \"Illustrative provider profile.\",\n        \"logo_url\": null,\n        \"website_url\": null,\n        \"category\": \"crypto\",\n        \"is_active\": true,\n        \"has_adapter\": true,\n        \"status\": \"active\",\n        \"average_rating\": null,\n        \"review_count\": 0,\n        \"data_source\": \"Quidax Feed\",\n        \"feed_health\": \"unknown\",\n        \"coverage_score\": 0,\n        \"coverage_label\": \"0/100\",\n        \"sync_mode\": \"auto\",\n        \"last_synced_at\": null\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"per_page\": 20,\n      \"total\": 1,\n      \"total_pages\": 1,\n      \"has_next\": false,\n      \"has_previous\": false\n    }\n  }\n}"
+                }
+              ],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                      "if (pm.response.code === 200) {",
+                      "  const body = pm.response.json();",
+                      "  pm.test(\"Kompare envelope\", function () { pm.expect(body.responseCode).to.eql(200); });",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Providers by category - giftcard",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/providers/overview?category=giftcard&page=1&per_page=20",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "overview"
+                  ],
+                  "query": [
+                    {
+                      "key": "category",
+                      "value": "giftcard",
+                      "disabled": false
+                    },
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "disabled": false
+                    },
+                    {
+                      "key": "per_page",
+                      "value": "20",
+                      "disabled": false
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Public category filter example. All supported category values come from MarketCategory. Results reflect stored providers, not proof that all provider products or routes are supported."
+              },
+              "response": [
+                {
+                  "name": "Expected response",
+                  "originalRequest": {
+                    "method": "GET",
+                    "url": {
+                      "raw": "{{base_url}}/providers/overview?category=giftcard&page=1&per_page=20",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "providers",
+                        "overview"
+                      ],
+                      "query": [
+                        {
+                          "key": "category",
+                          "value": "giftcard",
+                          "disabled": false
+                        },
+                        {
+                          "key": "page",
+                          "value": "1",
+                          "disabled": false
+                        },
+                        {
+                          "key": "per_page",
+                          "value": "20",
+                          "disabled": false
+                        }
+                      ]
+                    },
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "description": "Public category filter example. All supported category values come from MarketCategory. Results reflect stored providers, not proof that all provider products or routes are supported."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"responseCode\": 200,\n  \"message\": \"Provider overview retrieved successfully\",\n  \"data\": {\n    \"items\": [\n      {\n        \"id\": 3,\n        \"slug\": \"cardtonic\",\n        \"name\": \"Cardtonic\",\n        \"description\": \"Illustrative provider profile.\",\n        \"logo_url\": null,\n        \"website_url\": null,\n        \"category\": \"giftcard\",\n        \"is_active\": true,\n        \"has_adapter\": true,\n        \"status\": \"active\",\n        \"average_rating\": null,\n        \"review_count\": 0,\n        \"data_source\": \"Cardtonic Feed\",\n        \"feed_health\": \"unknown\",\n        \"coverage_score\": 0,\n        \"coverage_label\": \"0/100\",\n        \"sync_mode\": \"auto\",\n        \"last_synced_at\": null\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"per_page\": 20,\n      \"total\": 1,\n      \"total_pages\": 1,\n      \"has_next\": false,\n      \"has_previous\": false\n    }\n  }\n}"
+                }
+              ],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                      "if (pm.response.code === 200) {",
+                      "  const body = pm.response.json();",
+                      "  pm.test(\"Kompare envelope\", function () { pm.expect(body.responseCode).to.eql(200); });",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Providers by category - fx",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/providers/overview?category=fx&page=1&per_page=20",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "overview"
+                  ],
+                  "query": [
+                    {
+                      "key": "category",
+                      "value": "fx",
+                      "disabled": false
+                    },
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "disabled": false
+                    },
+                    {
+                      "key": "per_page",
+                      "value": "20",
+                      "disabled": false
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Public category filter example. All supported category values come from MarketCategory. Results reflect stored providers, not proof that all provider products or routes are supported."
+              },
+              "response": [
+                {
+                  "name": "Expected response",
+                  "originalRequest": {
+                    "method": "GET",
+                    "url": {
+                      "raw": "{{base_url}}/providers/overview?category=fx&page=1&per_page=20",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "providers",
+                        "overview"
+                      ],
+                      "query": [
+                        {
+                          "key": "category",
+                          "value": "fx",
+                          "disabled": false
+                        },
+                        {
+                          "key": "page",
+                          "value": "1",
+                          "disabled": false
+                        },
+                        {
+                          "key": "per_page",
+                          "value": "20",
+                          "disabled": false
+                        }
+                      ]
+                    },
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "description": "Public category filter example. All supported category values come from MarketCategory. Results reflect stored providers, not proof that all provider products or routes are supported."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"responseCode\": 200,\n  \"message\": \"Provider overview retrieved successfully\",\n  \"data\": {\n    \"items\": [\n      {\n        \"id\": 1,\n        \"slug\": \"wise\",\n        \"name\": \"Wise\",\n        \"description\": \"Illustrative provider profile.\",\n        \"logo_url\": null,\n        \"website_url\": null,\n        \"category\": \"fx\",\n        \"is_active\": true,\n        \"has_adapter\": true,\n        \"status\": \"active\",\n        \"average_rating\": null,\n        \"review_count\": 0,\n        \"data_source\": \"Wise Feed\",\n        \"feed_health\": \"unknown\",\n        \"coverage_score\": 0,\n        \"coverage_label\": \"0/100\",\n        \"sync_mode\": \"auto\",\n        \"last_synced_at\": null\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"per_page\": 20,\n      \"total\": 1,\n      \"total_pages\": 1,\n      \"has_next\": false,\n      \"has_previous\": false\n    }\n  }\n}"
+                }
+              ],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                      "if (pm.response.code === 200) {",
+                      "  const body = pm.response.json();",
+                      "  pm.test(\"Kompare envelope\", function () { pm.expect(body.responseCode).to.eql(200); });",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Providers by category - mutual_fund",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/providers/overview?category=mutual_fund&page=1&per_page=20",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "overview"
+                  ],
+                  "query": [
+                    {
+                      "key": "category",
+                      "value": "mutual_fund",
+                      "disabled": false
+                    },
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "disabled": false
+                    },
+                    {
+                      "key": "per_page",
+                      "value": "20",
+                      "disabled": false
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Public category filter example. All supported category values come from MarketCategory. Results reflect stored providers, not proof that all provider products or routes are supported."
+              },
+              "response": [
+                {
+                  "name": "Expected response",
+                  "originalRequest": {
+                    "method": "GET",
+                    "url": {
+                      "raw": "{{base_url}}/providers/overview?category=mutual_fund&page=1&per_page=20",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "providers",
+                        "overview"
+                      ],
+                      "query": [
+                        {
+                          "key": "category",
+                          "value": "mutual_fund",
+                          "disabled": false
+                        },
+                        {
+                          "key": "page",
+                          "value": "1",
+                          "disabled": false
+                        },
+                        {
+                          "key": "per_page",
+                          "value": "20",
+                          "disabled": false
+                        }
+                      ]
+                    },
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "description": "Public category filter example. All supported category values come from MarketCategory. Results reflect stored providers, not proof that all provider products or routes are supported."
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"responseCode\": 200,\n  \"message\": \"Provider overview retrieved successfully\",\n  \"data\": {\n    \"items\": [\n      {\n        \"id\": 4,\n        \"slug\": \"stanbic\",\n        \"name\": \"Stanbic IBTC Asset Management\",\n        \"description\": \"Illustrative provider profile.\",\n        \"logo_url\": null,\n        \"website_url\": null,\n        \"category\": \"mutual_fund\",\n        \"is_active\": true,\n        \"has_adapter\": true,\n        \"status\": \"active\",\n        \"average_rating\": null,\n        \"review_count\": 0,\n        \"data_source\": \"Stanbic IBTC Asset Management Feed\",\n        \"feed_health\": \"unknown\",\n        \"coverage_score\": 0,\n        \"coverage_label\": \"0/100\",\n        \"sync_mode\": \"auto\",\n        \"last_synced_at\": null\n      }\n    ],\n    \"pagination\": {\n      \"page\": 1,\n      \"per_page\": 20,\n      \"total\": 1,\n      \"total_pages\": 1,\n      \"has_next\": false,\n      \"has_previous\": false\n    }\n  }\n}"
+                }
+              ],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                      "if (pm.response.code === 200) {",
+                      "  const body = pm.response.json();",
+                      "  pm.test(\"Kompare envelope\", function () { pm.expect(body.responseCode).to.eql(200); });",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Invalid category example",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/providers/overview?category=banking",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "overview"
+                  ],
+                  "query": [
+                    {
+                      "key": "category",
+                      "value": "banking",
+                      "disabled": false
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Intentional failure example. banking is not a supported category; the expected HTTP status is 400, not an empty successful list."
+              },
+              "response": [
+                {
+                  "name": "Expected response",
+                  "originalRequest": {
+                    "method": "GET",
+                    "url": {
+                      "raw": "{{base_url}}/providers/overview?category=banking",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "providers",
+                        "overview"
+                      ],
+                      "query": [
+                        {
+                          "key": "category",
+                          "value": "banking",
+                          "disabled": false
+                        }
+                      ]
+                    },
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "description": "Intentional failure example. banking is not a supported category; the expected HTTP status is 400, not an empty successful list."
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"responseCode\": 400,\n  \"message\": \"Invalid provider category\",\n  \"data\": {\n    \"error\": \"bad_request\",\n    \"category\": \"banking\",\n    \"allowed_values\": [\n      \"crypto\",\n      \"giftcard\",\n      \"fx\",\n      \"mutual_fund\"\n    ]\n  }\n}"
+                }
+              ],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                      "if (pm.response.code === 400) {",
+                      "  const body = pm.response.json();",
+                      "  pm.test(\"Kompare envelope\", function () { pm.expect(body.responseCode).to.eql(400); });",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Provider updates, metrics refresh and ingestion triggering. Requires admin login.",
+      "item": [
+        {
+          "name": "Update provider",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{base_url}}/providers/{{provider_slug}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "providers",
+                "{{provider_slug}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Updates only supplied fields. Supported fields: name, description, logo_url, website_url, is_active, has_adapter, metadata_json. The slug and category are not editable through this schema. This is a real write when sent; the example updates the description only. Requires a current super_admin or support_admin access token. Use Login with that account first.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated provider description.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Expected response",
+              "originalRequest": {
+                "method": "PATCH",
+                "url": {
+                  "raw": "{{base_url}}/providers/{{provider_slug}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "{{provider_slug}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Updates only supplied fields. Supported fields: name, description, logo_url, website_url, is_active, has_adapter, metadata_json. The slug and category are not editable through this schema. This is a real write when sent; the example updates the description only. Requires a current super_admin or support_admin access token. Use Login with that account first.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Updated provider description.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 200,\n  \"message\": \"Provider updated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"slug\": \"wise\",\n    \"name\": \"Wise\",\n    \"description\": \"Updated provider description.\",\n    \"logo_url\": null,\n    \"website_url\": null,\n    \"category\": \"fx\",\n    \"is_active\": true,\n    \"has_adapter\": true,\n    \"metadata_json\": null,\n    \"created_at\": \"2026-11-09T10:00:00Z\",\n    \"updated_at\": \"2026-11-09T10:00:00Z\"\n  }\n}"
+            },
+            {
+              "name": "Missing authentication",
+              "originalRequest": {
+                "method": "PATCH",
+                "url": {
+                  "raw": "{{base_url}}/providers/{{provider_slug}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "{{provider_slug}}"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Updates only supplied fields. Supported fields: name, description, logo_url, website_url, is_active, has_adapter, metadata_json. The slug and category are not editable through this schema. This is a real write when sent; the example updates the description only. Requires a current super_admin or support_admin access token. Use Login with that account first.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Updated provider description.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 401,\n  \"message\": \"Authentication credentials were not provided\",\n  \"data\": {\n    \"error\": \"unauthorized\"\n  }\n}"
+            },
+            {
+              "name": "Admin role required",
+              "originalRequest": {
+                "method": "PATCH",
+                "url": {
+                  "raw": "{{base_url}}/providers/{{provider_slug}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "{{provider_slug}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Updates only supplied fields. Supported fields: name, description, logo_url, website_url, is_active, has_adapter, metadata_json. The slug and category are not editable through this schema. This is a real write when sent; the example updates the description only. Requires a current super_admin or support_admin access token. Use Login with that account first.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Updated provider description.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 403,\n  \"message\": \"Admin access is required\",\n  \"data\": {\n    \"error\": \"forbidden\"\n  }\n}"
+            },
+            {
+              "name": "Provider not found",
+              "originalRequest": {
+                "method": "PATCH",
+                "url": {
+                  "raw": "{{base_url}}/providers/missing-provider",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "missing-provider"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Updates only supplied fields. Supported fields: name, description, logo_url, website_url, is_active, has_adapter, metadata_json. The slug and category are not editable through this schema. This is a real write when sent; the example updates the description only. Requires a current super_admin or support_admin access token. Use Login with that account first.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Updated provider description.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 404,\n  \"message\": \"Provider not found\",\n  \"data\": {\n    \"error\": \"not_found\",\n    \"slug\": \"missing-provider\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Kompare envelope\", function () { pm.expect(body.responseCode).to.eql(200); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh all provider metrics",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/providers/metrics/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "providers",
+                "metrics",
+                "refresh"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "Recalculates provider metrics from existing stored data. This is not ingestion and does not fetch provider market data. Requires a current super_admin or support_admin access token. Use Login with that account first."
+          },
+          "response": [
+            {
+              "name": "Expected response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/providers/metrics/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "metrics",
+                    "refresh"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Recalculates provider metrics from existing stored data. This is not ingestion and does not fetch provider market data. Requires a current super_admin or support_admin access token. Use Login with that account first."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 200,\n  \"message\": \"Provider metrics refreshed successfully\",\n  \"data\": {\n    \"providers_refreshed\": 4\n  }\n}"
+            },
+            {
+              "name": "Missing authentication",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/providers/metrics/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "metrics",
+                    "refresh"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Recalculates provider metrics from existing stored data. This is not ingestion and does not fetch provider market data. Requires a current super_admin or support_admin access token. Use Login with that account first."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 401,\n  \"message\": \"Authentication credentials were not provided\",\n  \"data\": {\n    \"error\": \"unauthorized\"\n  }\n}"
+            },
+            {
+              "name": "Admin role required",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/providers/metrics/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "metrics",
+                    "refresh"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Recalculates provider metrics from existing stored data. This is not ingestion and does not fetch provider market data. Requires a current super_admin or support_admin access token. Use Login with that account first."
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 403,\n  \"message\": \"Admin access is required\",\n  \"data\": {\n    \"error\": \"forbidden\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Kompare envelope\", function () { pm.expect(body.responseCode).to.eql(200); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh one provider metrics",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/providers/{{provider_slug}}/metrics/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "providers",
+                "{{provider_slug}}",
+                "metrics",
+                "refresh"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "Recalculates cached review and operational metrics for this provider from stored data. No request body is needed. Requires a current super_admin or support_admin access token. Use Login with that account first."
+          },
+          "response": [
+            {
+              "name": "Expected response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/providers/{{provider_slug}}/metrics/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "{{provider_slug}}",
+                    "metrics",
+                    "refresh"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Recalculates cached review and operational metrics for this provider from stored data. No request body is needed. Requires a current super_admin or support_admin access token. Use Login with that account first."
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 200,\n  \"message\": \"Provider metrics refreshed successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"slug\": \"wise\",\n    \"name\": \"Wise\",\n    \"description\": \"Illustrative provider profile.\",\n    \"logo_url\": null,\n    \"website_url\": null,\n    \"category\": \"fx\",\n    \"is_active\": true,\n    \"has_adapter\": true,\n    \"status\": \"active\",\n    \"average_rating\": null,\n    \"review_count\": 0,\n    \"data_source\": \"Wise Feed\",\n    \"feed_health\": \"unknown\",\n    \"coverage_score\": 0,\n    \"coverage_label\": \"0/100\",\n    \"sync_mode\": \"auto\",\n    \"last_synced_at\": null\n  }\n}"
+            },
+            {
+              "name": "Missing authentication",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/providers/{{provider_slug}}/metrics/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "{{provider_slug}}",
+                    "metrics",
+                    "refresh"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Recalculates cached review and operational metrics for this provider from stored data. No request body is needed. Requires a current super_admin or support_admin access token. Use Login with that account first."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 401,\n  \"message\": \"Authentication credentials were not provided\",\n  \"data\": {\n    \"error\": \"unauthorized\"\n  }\n}"
+            },
+            {
+              "name": "Admin role required",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/providers/{{provider_slug}}/metrics/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "{{provider_slug}}",
+                    "metrics",
+                    "refresh"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Recalculates cached review and operational metrics for this provider from stored data. No request body is needed. Requires a current super_admin or support_admin access token. Use Login with that account first."
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 403,\n  \"message\": \"Admin access is required\",\n  \"data\": {\n    \"error\": \"forbidden\"\n  }\n}"
+            },
+            {
+              "name": "Provider not found",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/providers/missing-provider/metrics/refresh",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "missing-provider",
+                    "metrics",
+                    "refresh"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Recalculates cached review and operational metrics for this provider from stored data. No request body is needed. Requires a current super_admin or support_admin access token. Use Login with that account first."
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 404,\n  \"message\": \"Provider not found\",\n  \"data\": {\n    \"error\": \"not_found\",\n    \"slug\": \"missing-provider\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Kompare envelope\", function () { pm.expect(body.responseCode).to.eql(200); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Queue provider ingestion",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/providers/{{provider_slug}}/ingestion-runs/{{job_type}}?include_kyc=false",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "providers",
+                "{{provider_slug}}",
+                "ingestion-runs",
+                "{{job_type}}"
+              ],
+              "query": [
+                {
+                  "key": "include_kyc",
+                  "value": "false",
+                  "disabled": false
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "Queues ingestion and returns HTTP 202 with a job ID; it does not mean provider data has already been fetched. Default example: wise / market_data, include_kyc=false. Requires a provider with an adapter and a running ingestion worker. Wise supports market_data and currencies; Flutterwave/Fincra support market_data; Stanbic/United Capital support market_data and fund_details. KYC is not supported for FX or mutual funds. Job status is available separately under Ingestion at GET /providers/{slug}/ingestion-jobs/{job_id}. Requires a current super_admin or support_admin access token. Use Login with that account first."
+          },
+          "response": [
+            {
+              "name": "Expected response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/providers/{{provider_slug}}/ingestion-runs/{{job_type}}?include_kyc=false",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "{{provider_slug}}",
+                    "ingestion-runs",
+                    "{{job_type}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "include_kyc",
+                      "value": "false",
+                      "disabled": false
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Queues ingestion and returns HTTP 202 with a job ID; it does not mean provider data has already been fetched. Default example: wise / market_data, include_kyc=false. Requires a provider with an adapter and a running ingestion worker. Wise supports market_data and currencies; Flutterwave/Fincra support market_data; Stanbic/United Capital support market_data and fund_details. KYC is not supported for FX or mutual funds. Job status is available separately under Ingestion at GET /providers/{slug}/ingestion-jobs/{job_id}. Requires a current super_admin or support_admin access token. Use Login with that account first."
+              },
+              "status": "Accepted",
+              "code": 202,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 202,\n  \"message\": \"Provider ingestion queued\",\n  \"data\": {\n    \"provider\": \"wise\",\n    \"job_type\": \"market_data\",\n    \"include_kyc\": false,\n    \"status\": \"accepted\",\n    \"job_id\": 101\n  }\n}"
+            },
+            {
+              "name": "Missing authentication",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/providers/{{provider_slug}}/ingestion-runs/{{job_type}}?include_kyc=false",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "{{provider_slug}}",
+                    "ingestion-runs",
+                    "{{job_type}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "include_kyc",
+                      "value": "false",
+                      "disabled": false
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Queues ingestion and returns HTTP 202 with a job ID; it does not mean provider data has already been fetched. Default example: wise / market_data, include_kyc=false. Requires a provider with an adapter and a running ingestion worker. Wise supports market_data and currencies; Flutterwave/Fincra support market_data; Stanbic/United Capital support market_data and fund_details. KYC is not supported for FX or mutual funds. Job status is available separately under Ingestion at GET /providers/{slug}/ingestion-jobs/{job_id}. Requires a current super_admin or support_admin access token. Use Login with that account first."
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 401,\n  \"message\": \"Authentication credentials were not provided\",\n  \"data\": {\n    \"error\": \"unauthorized\"\n  }\n}"
+            },
+            {
+              "name": "Admin role required",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/providers/{{provider_slug}}/ingestion-runs/{{job_type}}?include_kyc=false",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "{{provider_slug}}",
+                    "ingestion-runs",
+                    "{{job_type}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "include_kyc",
+                      "value": "false",
+                      "disabled": false
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Queues ingestion and returns HTTP 202 with a job ID; it does not mean provider data has already been fetched. Default example: wise / market_data, include_kyc=false. Requires a provider with an adapter and a running ingestion worker. Wise supports market_data and currencies; Flutterwave/Fincra support market_data; Stanbic/United Capital support market_data and fund_details. KYC is not supported for FX or mutual funds. Job status is available separately under Ingestion at GET /providers/{slug}/ingestion-jobs/{job_id}. Requires a current super_admin or support_admin access token. Use Login with that account first."
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 403,\n  \"message\": \"Admin access is required\",\n  \"data\": {\n    \"error\": \"forbidden\"\n  }\n}"
+            },
+            {
+              "name": "Provider not found",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/providers/missing-provider/ingestion-runs/{{job_type}}?include_kyc=false",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "missing-provider",
+                    "ingestion-runs",
+                    "{{job_type}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "include_kyc",
+                      "value": "false",
+                      "disabled": false
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Queues ingestion and returns HTTP 202 with a job ID; it does not mean provider data has already been fetched. Default example: wise / market_data, include_kyc=false. Requires a provider with an adapter and a running ingestion worker. Wise supports market_data and currencies; Flutterwave/Fincra support market_data; Stanbic/United Capital support market_data and fund_details. KYC is not supported for FX or mutual funds. Job status is available separately under Ingestion at GET /providers/{slug}/ingestion-jobs/{job_id}. Requires a current super_admin or support_admin access token. Use Login with that account first."
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 404,\n  \"message\": \"Provider not found\",\n  \"data\": {\n    \"error\": \"not_found\",\n    \"slug\": \"missing-provider\"\n  }\n}"
+            },
+            {
+              "name": "No adapter",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/providers/{{provider_slug}}/ingestion-runs/{{job_type}}?include_kyc=false",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "providers",
+                    "{{provider_slug}}",
+                    "ingestion-runs",
+                    "{{job_type}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "include_kyc",
+                      "value": "false",
+                      "disabled": false
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "description": "Queues ingestion and returns HTTP 202 with a job ID; it does not mean provider data has already been fetched. Default example: wise / market_data, include_kyc=false. Requires a provider with an adapter and a running ingestion worker. Wise supports market_data and currencies; Flutterwave/Fincra support market_data; Stanbic/United Capital support market_data and fund_details. KYC is not supported for FX or mutual funds. Job status is available separately under Ingestion at GET /providers/{slug}/ingestion-jobs/{job_id}. Requires a current super_admin or support_admin access token. Use Login with that account first."
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"responseCode\": 400,\n  \"message\": \"Provider does not have an adapter configured\",\n  \"data\": {\n    \"error\": \"bad_request\",\n    \"slug\": \"wise\"\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 202\", function () { pm.response.to.have.status(202); });",
+                  "if (pm.response.code === 202) {",
+                  "  const body = pm.response.json();",
+                  "  pm.test(\"Kompare envelope\", function () { pm.expect(body.responseCode).to.eql(202); });",
+                  "  if (body.data.job_id !== undefined) { pm.environment.set(\"ingestion_job_id\", String(body.data.job_id)); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
