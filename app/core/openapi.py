@@ -5,6 +5,7 @@ from fastapi import FastAPI
 TAGS = {
     "Authentication": "Registration, login and session management.",
     "Providers": "General provider listing and profile management.",
+    "Provider Reviews": "Provider reviews, tips, comments, votes and moderation.",
     "Ingestion": "Shared ingestion schedules, execution history and source records.",
     "KYC": "Verification requirements and KYC reports across providers.",
     "Reports": "General provider summaries and reports.",
@@ -75,11 +76,16 @@ def register_provider_documentation(app: FastAPI) -> None:
         schema = original_openapi()
         used = set()
         for path, operations in schema.get("paths", {}).items():
-            group = documentation_group(path)
-            if group is None:
-                continue
             for method, operation in operations.items():
                 if method in {"get", "post", "put", "patch", "delete", "head", "options"}:
+                    # Reviews span provider, review and admin URLs; retain their router group.
+                    group = (
+                        "Provider Reviews"
+                        if "Provider Reviews" in operation.get("tags", [])
+                        else documentation_group(path)
+                    )
+                    if group is None:
+                        continue
                     operation["tags"] = [group]
                     used.add(group)
         schema["tags"] = [

@@ -20,7 +20,7 @@ from app.schemas.provider_review import (
 )
 from app.services.provider_review import ProviderReviewService
 
-router = APIRouter(tags=["provider-reviews"])
+router = APIRouter(tags=["Provider Reviews"])
 
 
 def _enum_option(value: str) -> EnumOptionRead:

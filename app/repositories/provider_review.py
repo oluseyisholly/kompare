@@ -62,16 +62,23 @@ class ProviderReviewRepository:
             query = query.filter(ProviderReview.tags.contains([tag.value for tag in tags]))
         return paginate_query(query, page=page, per_page=per_page)
 
-    def get_summary_by_provider(self, provider_id: int) -> tuple[float | None, int, dict[int, int]]:
+    def get_rating_summary(self, provider_id: int) -> tuple[float | None, int]:
         average_rating, total_reviews = (
             self.db.query(func.avg(ProviderReview.rating), func.count(ProviderReview.id))
             .filter(
                 ProviderReview.provider_id == provider_id,
                 ProviderReview.status == ProviderReviewStatus.PUBLISHED,
                 ProviderReview.review_type == ProviderReviewType.REVIEW,
+                ProviderReview.rating.isnot(None),
             )
             .one()
         )
+        return float(average_rating) if average_rating is not None else None, int(
+            total_reviews or 0
+        )
+
+    def get_summary_by_provider(self, provider_id: int) -> tuple[float | None, int, dict[int, int]]:
+        average_rating, total_reviews = self.get_rating_summary(provider_id)
         rating_rows = (
             self.db.query(ProviderReview.rating, func.count(ProviderReview.id))
             .filter(
@@ -83,8 +90,8 @@ class ProviderReviewRepository:
             .all()
         )
         return (
-            float(average_rating) if average_rating is not None else None,
-            int(total_reviews or 0),
+            average_rating,
+            total_reviews,
             {rating: count for rating, count in rating_rows},
         )
 

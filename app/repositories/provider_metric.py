@@ -5,7 +5,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.models.enums import FetchRunStatus, ProviderName, ProviderReviewStatus, ProviderReviewType
+from app.models.enums import FetchRunStatus, ProviderName
 from app.models.fee import FeeProfile
 from app.models.fetch_run import FetchRun
 from app.models.giftcard_rate import GiftCardRate
@@ -14,9 +14,9 @@ from app.models.kyc import KycProfile
 from app.models.provider import Provider
 from app.models.provider_asset import ProviderAsset
 from app.models.provider_metric import ProviderMetric
-from app.models.provider_review import ProviderReview
 from app.models.quote import Quote
 from app.repositories.pagination import paginate_query
+from app.repositories.provider_review import ProviderReviewRepository
 
 
 class ProviderMetricRepository:
@@ -64,17 +64,7 @@ class ProviderMetricRepository:
         return metric
 
     def get_review_summary(self, provider_id: int) -> tuple[float | None, int]:
-        average_rating, review_count = (
-            self.db.query(func.avg(ProviderReview.rating), func.count(ProviderReview.id))
-            .filter(
-                ProviderReview.provider_id == provider_id,
-                ProviderReview.status == ProviderReviewStatus.PUBLISHED,
-                ProviderReview.review_type == ProviderReviewType.REVIEW,
-                ProviderReview.rating.isnot(None),
-            )
-            .one()
-        )
-        return float(average_rating) if average_rating is not None else None, int(review_count or 0)
+        return ProviderReviewRepository(self.db).get_rating_summary(provider_id)
 
     def count_provider_assets(self, provider: ProviderName) -> int:
         return int(
