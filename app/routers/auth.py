@@ -114,7 +114,13 @@ def login(
     )
 
 
-@router.post("/verify-email", response_model=ApiResponse[UserRead])
+@router.post(
+    "/verify-email",
+    response_model=ApiResponse[UserRead],
+    description="Verify the registration email with its OTP. When "
+    "IS_PRODUCTION=false, 000000 is also accepted. Production requires the real emailed OTP. "
+    "Code expiry and attempt limits still apply. Password-reset codes are unaffected.",
+)
 def verify_email(
     request: Request,
     payload: VerifyEmailRequest,

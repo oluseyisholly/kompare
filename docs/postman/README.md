@@ -43,6 +43,10 @@ entered manually. Importing this collection does not send any requests or emails
    be configured on the backend for the verification email to arrive.
 2. Copy the actual emailed code into `verification_otp`, keeping it a string so leading
    zeros survive. Send **Verify email**. Verification does not log the user in.
+   While email delivery is unavailable, a server configured with
+   `IS_PRODUCTION=false` also accepts `000000`. Set `IS_PRODUCTION=true`
+   to require the real emailed OTP. Missing values default to `true`. Expiry and attempt
+   limits still apply; resend a code if needed. Password-reset OTPs remain unchanged.
 3. Send **Login**. Its script saves `access_token` and `refresh_token` in the selected
    environment. **Current user** uses the saved access token as a bearer token.
 4. Use **Refresh session** when needed. Refresh rotates both tokens and the script

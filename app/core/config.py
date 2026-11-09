@@ -55,6 +55,13 @@ EMAIL_VERIFICATION_OTP_EXPIRE_MINUTES = int(
     os.getenv("EMAIL_VERIFICATION_OTP_EXPIRE_MINUTES", "10")
 )
 EMAIL_VERIFICATION_OTP_LENGTH = int(os.getenv("EMAIL_VERIFICATION_OTP_LENGTH", "6"))
+# Require an explicit false value to enable non-production OTP behaviour.
+IS_PRODUCTION = os.getenv("IS_PRODUCTION", "true").strip().lower() not in {
+    "false",
+    "0",
+    "no",
+    "off",
+}
 PASSWORD_RESET_OTP_EXPIRE_MINUTES = int(os.getenv("PASSWORD_RESET_OTP_EXPIRE_MINUTES", "10"))
 PASSWORD_RESET_OTP_LENGTH = int(os.getenv("PASSWORD_RESET_OTP_LENGTH", "6"))
 

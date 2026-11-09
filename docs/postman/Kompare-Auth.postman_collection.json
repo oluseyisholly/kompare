@@ -207,7 +207,7 @@
               "type": "noauth"
             },
             "url": "{{base_url}}/auth/verify-email",
-            "description": "Public. Put the code from the registration email into verification_otp. Keep it as a string to retain leading zeros. Default five failed attempts per code. Success verifies the user; it does not issue login tokens.",
+            "description": "Public. Put the code from the registration email into verification_otp. Keep it as a string to retain leading zeros. Default five failed attempts per code. Success verifies the user; it does not issue login tokens. Temporary testing: when IS_PRODUCTION=false on the server, otp=\"000000\" also works for an active, unexpired verification code. It does not apply to password resets.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{email}}\",\n  \"otp\": \"{{verification_otp}}\"\n}",

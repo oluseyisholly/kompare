@@ -80,6 +80,16 @@ API startup fails if the key is missing, blank, or set to a known development
 placeholder (`change-me` or `kompare-dev-secret`). Standalone ingestion commands do not
 require this authentication key. Keep the key out of version control.
 
+For temporary testing while email delivery is unavailable, set
+`IS_PRODUCTION=false` and restart the API. After registration,
+submit `{"email":"user@example.com","otp":"000000"}` to `POST /auth/verify-email`,
+then log in with the chosen password. The account still needs an active, unexpired
+verification code with attempts remaining; resend a code if it has expired.
+Set `IS_PRODUCTION=true` in production to require the real emailed code. Missing,
+blank or unrecognized values also use production behaviour. Password-reset OTP checks
+are unchanged. Configure the same variable on the hosting platform and restart/redeploy.
+The local `.env` is not committed or automatically copied to deployed environments.
+
 ---
 
 ## ▶️ Run the Local Environment
